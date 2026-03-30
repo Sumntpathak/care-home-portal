@@ -847,6 +847,133 @@ function LiveTestCards() {
           </FadeIn>
         );
       })}
+
+      {/* ── Custom Test: Let visitors run their own test case ── */}
+      {!running && (
+        <FadeIn>
+          <CustomTestRunner />
+        </FadeIn>
+      )}
+    </div>
+  );
+}
+
+function CustomTestRunner() {
+  const [drug1, setDrug1] = useState("");
+  const [drug2, setDrug2] = useState("");
+  const [result, setResult] = useState(null);
+  const [checking, setChecking] = useState(false);
+
+  const runCustom = async () => {
+    if (!drug1.trim() || !drug2.trim()) return;
+    setChecking(true);
+    setResult(null);
+    await loadEngines();
+    setTimeout(() => {
+      try {
+        const r = checkInteractions([{ name: drug1.trim() }, { name: drug2.trim() }]);
+        setResult(r);
+      } catch (err) {
+        setResult({ error: err.message });
+      }
+      setChecking(false);
+    }, 400);
+  };
+
+  const inputStyle = {
+    background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.12)",
+    borderRadius: 8, padding: "10px 14px", color: "#f0f0f0", fontSize: 14,
+    fontWeight: 600, outline: "none", width: "100%", fontFamily: "inherit",
+  };
+
+  return (
+    <div style={{ marginTop: 32, padding: "28px 24px", background: "rgba(255,255,255,.03)", borderRadius: 14, border: "1px solid rgba(255,255,255,.08)" }}>
+      <div style={{ fontSize: 15, fontWeight: 700, color: "#f0f0f0", marginBottom: 4 }}>
+        Try your own — type any two drugs
+      </div>
+      <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 16 }}>
+        Enter real medicine names (generic or Indian brand). The 5-pass engine runs live in your browser.
+      </div>
+      <div style={{ display: "flex", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
+        <input value={drug1} onChange={e => setDrug1(e.target.value)} placeholder="Drug 1 (e.g. Warfarin)" style={{ ...inputStyle, flex: 1, minWidth: 160 }}
+          onKeyDown={e => e.key === "Enter" && runCustom()} />
+        <span style={{ color: "#6b7280", alignSelf: "center", fontSize: 16, fontWeight: 700 }}>+</span>
+        <input value={drug2} onChange={e => setDrug2(e.target.value)} placeholder="Drug 2 (e.g. Aspirin)" style={{ ...inputStyle, flex: 1, minWidth: 160 }}
+          onKeyDown={e => e.key === "Enter" && runCustom()} />
+        <button onClick={runCustom} disabled={checking || !drug1.trim() || !drug2.trim()}
+          style={{
+            padding: "10px 24px", borderRadius: 8, border: "none", cursor: "pointer",
+            background: checking ? "rgba(59,130,246,.3)" : "linear-gradient(135deg, #3b82f6, #2563eb)",
+            color: "#fff", fontSize: 13, fontWeight: 700, whiteSpace: "nowrap",
+          }}>
+          {checking ? "Checking..." : "Run Check"}
+        </button>
+      </div>
+
+      {/* Quick suggestion chips */}
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: result ? 16 : 0 }}>
+        {[
+          ["Metoprolol", "Fluoxetine"], ["Digoxin", "Amiodarone"], ["Atorvastatin", "Clarithromycin"],
+          ["Clopidogrel", "Omeprazole"], ["Tramadol", "Fluoxetine"], ["Glycomet", "Ecosprin"],
+        ].map(([a, b], i) => (
+          <button key={i} onClick={() => { setDrug1(a); setDrug2(b); }} style={{
+            padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 500, cursor: "pointer",
+            background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.1)", color: "#9ca3af",
+          }}>
+            {a} + {b}
+          </button>
+        ))}
+      </div>
+
+      {/* Result */}
+      {result && !result.error && (
+        <div style={{ animation: "fadeIn .3s ease both" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+            <span style={{
+              padding: "4px 12px", borderRadius: 6, fontSize: 12, fontWeight: 700,
+              background: result.overallRisk === "safe" ? "rgba(16,185,129,.15)" : result.overallRisk === "high-risk" ? "rgba(239,68,68,.15)" : "rgba(245,158,11,.15)",
+              color: result.overallRisk === "safe" ? "#34d399" : result.overallRisk === "high-risk" ? "#f87171" : "#fbbf24",
+              border: `1px solid ${result.overallRisk === "safe" ? "rgba(16,185,129,.3)" : result.overallRisk === "high-risk" ? "rgba(239,68,68,.3)" : "rgba(245,158,11,.3)"}`,
+            }}>
+              {(result.overallRisk || "unknown").toUpperCase()}
+            </span>
+            <span style={{ fontSize: 12, color: "#6b7280" }}>
+              {result.interactions?.length || 0} interaction(s) · {result.allergyAlerts?.length || 0} allergy alert(s) · {result.duplicateTherapy?.length || 0} duplicate(s)
+            </span>
+          </div>
+
+          {(result.interactions || []).map((inter, i) => (
+            <div key={i} style={{
+              padding: "10px 14px", borderRadius: 8, marginBottom: 6,
+              background: inter.severity === "major" ? "rgba(239,68,68,.08)" : "rgba(245,158,11,.08)",
+              border: `1px solid ${inter.severity === "major" ? "rgba(239,68,68,.2)" : "rgba(245,158,11,.2)"}`,
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                <span style={{ fontWeight: 700, fontSize: 12, color: inter.severity === "major" ? "#f87171" : "#fbbf24" }}>
+                  {inter.drug1} + {inter.drug2}
+                </span>
+                <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 4, background: "rgba(255,255,255,.06)", color: "#9ca3af" }}>
+                  {inter.severity || "moderate"}
+                </span>
+                {inter.source && <span style={{ fontSize: 10, color: "#6b7280" }}>{inter.source}</span>}
+              </div>
+              <div style={{ fontSize: 12, color: "#d1d5db", lineHeight: 1.6 }}>{inter.mechanism || inter.description || inter.message || "Interaction detected"}</div>
+            </div>
+          ))}
+
+          {(result.interactions || []).length === 0 && (
+            <div style={{ padding: "12px 14px", borderRadius: 8, background: "rgba(16,185,129,.08)", border: "1px solid rgba(16,185,129,.2)", fontSize: 13, color: "#34d399" }}>
+              No interactions found between {drug1} and {drug2}. These can be used together based on current engine rules.
+            </div>
+          )}
+        </div>
+      )}
+
+      {result?.error && (
+        <div style={{ padding: "10px 14px", borderRadius: 8, background: "rgba(239,68,68,.08)", border: "1px solid rgba(239,68,68,.2)", fontSize: 12, color: "#f87171" }}>
+          Error: {result.error}
+        </div>
+      )}
     </div>
   );
 }
