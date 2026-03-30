@@ -239,27 +239,7 @@ export default function Layout() {
 
   return (
     <div className="app">
-      {/* DEMO MODE WARNING BANNER */}
-      {import.meta.env.VITE_DEMO_MODE !== "false" && (
-        <div style={{
-          background: "linear-gradient(90deg, #f59e0b, #d97706)",
-          color: "#fff",
-          padding: "8px 16px",
-          fontSize: "12px",
-          fontWeight: 600,
-          textAlign: "center",
-          position: "sticky",
-          top: 0,
-          zIndex: 9999,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "8px",
-        }}>
-          <AlertTriangle size={14} />
-          DEMO MODE — All data is temporary and resets on page refresh. This is not a production environment.
-        </div>
-      )}
+      {/* Demo banner removed — live site is the demo, works seamlessly with demo credentials */}
 
       {/* SIDEBAR OVERLAY (mobile) */}
       {sidebarOpen && <div className="sb-overlay no-print" onClick={() => setSidebarOpen(false)} />}

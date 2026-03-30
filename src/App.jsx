@@ -40,7 +40,8 @@ const ClinicalAudit = lazy(() => import("./pages/ClinicalAudit"));
 
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
-  return user ? children : <Navigate to="/landing" replace />;
+  // Require valid user with name and role — stale/empty sessions redirect to login
+  return (user && user.name && user.role) ? children : <Navigate to="/landing" replace />;
 }
 
 function RoleGuard({ allowed, children }) {
@@ -80,7 +81,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/landing" element={<Lazy><Landing /></Lazy>} />
-      <Route path="/login" element={<Login />} />
+      <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route index element={<Lazy><Dashboard /></Lazy>} />
         <Route path="users"                element={<RoleGuard allowed={["Admin"]}><Lazy><Users /></Lazy></RoleGuard>} />
