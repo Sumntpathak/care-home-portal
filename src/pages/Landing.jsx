@@ -710,31 +710,44 @@ function LiveTestCards() {
   ];
 
   useEffect(() => {
-    // Lazy load ALL engines needed for test cases
     async function runTests() {
       await loadEngines();
 
-      // Also load pipeline, disclaimer, nabh
+      // Load ALL engine modules
+      let pipeline, disclaimer, nabh, vitalsEng;
       try {
-        const [pipeline, disclaimer, nabh, vitalsEng] = await Promise.all([
+        [pipeline, disclaimer, nabh, vitalsEng] = await Promise.all([
           import("../utils/clinicalPipeline"),
           import("../utils/clinicalDisclaimer"),
           import("../utils/nabhTemplates"),
           import("../utils/vitalsEngine"),
         ]);
-        window.__clinicalPipeline = pipeline;
-        window.__clinicalDisclaimer = disclaimer;
-        window.__nabhTemplates = nabh;
-        // Store vitals classifiers
-        window._classifyGlucose = vitalsEng.classifyGlucose;
-        window._classifySystolic = vitalsEng.classifySystolic;
-      } catch {}
+      } catch { pipeline = {}; disclaimer = {}; nabh = {}; vitalsEng = {}; }
 
-      // Small delay for engines to be ready
-      await new Promise(r => setTimeout(r, 500));
+      // Build a run function for each test case using the LOADED modules directly
+      const liveTests = TEST_CASES.map(tc => {
+        let runFn = tc.run;
+
+        // Override run() for tests that need loaded modules
+        if (tc.id === "TC-086") runFn = () => { const r = pipeline.calculateQSOFA?.({systolic:95,respiratoryRate:24,gcs:14}); return r ? `Score: ${r.score}/3 — ${r.risk}` : "Engine not loaded"; };
+        if (tc.id === "TC-109") runFn = () => { const r = pipeline.calculateNEWS2?.({respiratoryRate:16,spo2:98,systolic:125,pulse:75,temperature:98.6,consciousness:"A"}); return r ? `Score: ${r.score}/20 — ${r.risk}` : "Engine not loaded"; };
+        if (tc.id === "TC-112") runFn = () => { const cls = vitalsEng.classifyGlucose?.(53); return cls || "Engine not loaded"; };
+        if (tc.id === "TC-121") runFn = () => { const cls = vitalsEng.classifySystolic?.(180); return cls || "Engine not loaded"; };
+        if (tc.id === "TC-151") runFn = () => { const r = pipeline.simulateAddDrug?.({medications:[{name:"warfarin"}]},{}, "aspirin"); return r ? (r.isSafe ? "Safe (ERROR)" : `Unsafe — ${r.predictions?.length || 0} concern(s)`) : "Engine not loaded"; };
+        if (tc.id === "TC-156") runFn = () => { const r = pipeline.simulateAddDrug?.({age:70,medications:[{name:"paracetamol"}]},{}, "diazepam"); return r ? (r.isSafe ? "Safe (ERROR)" : `Unsafe — Beers flagged`) : "Engine not loaded"; };
+        if (tc.id === "TC-157") runFn = () => { const r = pipeline.simulateAddDrug?.({medications:[]},{}, "aspirin"); return r ? (r.isSafe ? "Safe — no concerns" : `Unsafe (unexpected)`) : "Engine not loaded"; };
+        if (tc.id === "TC-160") runFn = () => { const r = pipeline.simulateAddDrug?.({medications:[{name:"ramipril"}]},{}, "spironolactone"); return r ? (r.isSafe ? "Safe (ERROR)" : `Unsafe — ${r.predictions?.length} concern(s)`) : "Engine not loaded"; };
+        if (tc.id === "TC-172") runFn = () => { const r = disclaimer.validateClinicalInput?.({systolic:39}); return r ? (r.valid ? "Valid (ERROR)" : `Rejected: ${r.errors[0]?.message}`) : "Engine not loaded"; };
+        if (tc.id === "TC-174") runFn = () => { const r = disclaimer.validateClinicalInput?.({systolic:120,diastolic:130}); return r ? (r.valid ? "Valid (ERROR)" : `Rejected: ${r.errors[0]?.message}`) : "Engine not loaded"; };
+        if (tc.id === "TC-180") runFn = () => { const r = disclaimer.validateClinicalInput?.({systolic:120,diastolic:80,pulse:72,spo2:98}); return r ? (r.valid ? "Valid — all within range" : `Rejected (ERROR)`) : "Engine not loaded"; };
+        if (tc.id === "TC-185") runFn = () => { const r = nabh.validateDischargeSummary?.({}); return r ? (r.valid ? "Valid (ERROR)" : `Invalid — ${r.completeness}% complete, ${r.errors.length} errors`) : "Engine not loaded"; };
+        if (tc.id === "TC-186") runFn = () => { const r = nabh.validateDischargeSummary?.({dischargeDate:"2026-01-01",admissionDate:"2026-01-05"}); const dateErr = r?.errors?.find(e => e.message?.includes("before")); return dateErr ? `Error: ${dateErr.message}` : (r ? "No date error found" : "Engine not loaded"); };
+
+        return { ...tc, run: runFn };
+      });
 
       // Run all test cases
-      const outputs = TEST_CASES.map(tc => {
+      const outputs = liveTests.map(tc => {
         try {
           const actual = tc.run();
           const passed = tc.pass(actual);
@@ -749,12 +762,6 @@ function LiveTestCards() {
     }
     runTests();
   }, []);
-
-  // Store classifiers on window for test case access
-  if (typeof window !== "undefined") {
-    window._classifyGlucose = window._classifyGlucose || null;
-    window._classifySystolic = window._classifySystolic || null;
-  }
 
   const groups = ["Drug Safety", "Vitals", "Simulation", "Safety Guard", "NABH"];
   const passCount = results.filter(r => r.passed).length;
