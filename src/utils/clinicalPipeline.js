@@ -14,6 +14,7 @@
 
 import { classifySystolic, classifyDiastolic, classifyPulse, classifySpo2, classifyGlucose, classifyTemperature, calculateQSOFA, screenCardiorenalSyndrome, screenOvermedication } from './vitalsEngine';
 import { logEngineCall } from './auditTrail';
+import { checkInteractions } from './drugInteractions';
 
 // ═══════════════════════════════════════════════════════
 //  LAYER 2: RISK SCORING SYSTEMS
@@ -624,8 +625,31 @@ export function simulateAddDrug(patient = {}, vitals = {}, newDrugName = "", opt
   const severityOrder = { normal: 0, info: 1, warning: 2, critical: 3 };
   const riskDelta = (severityOrder[simulatedResult.overallSeverity] || 0) - (severityOrder[currentResult.overallSeverity] || 0);
 
+  // ── CRITICAL: Run 5-pass drug interaction engine on simulated med list ──
+  let newDrugInteractions = [];
+  try {
+    const drugCheckResult = checkInteractions(
+      simulatedMeds,
+      { age: patient.age, conditions: patient.conditions || [], allergies: patient.allergies ? (Array.isArray(patient.allergies) ? patient.allergies : patient.allergies.split(",").map(a => a.trim())) : [] }
+    );
+    newDrugInteractions = (drugCheckResult?.interactions || []).filter(i =>
+      i.drug1?.toLowerCase().includes(newDrugName.toLowerCase()) ||
+      i.drug2?.toLowerCase().includes(newDrugName.toLowerCase())
+    );
+  } catch {}
+
   // Build prediction
   const predictions = [];
+
+  // Drug-drug interactions (5-pass engine) — MOST CRITICAL CHECK
+  if (newDrugInteractions.length > 0) {
+    predictions.push({
+      type: "drug-interaction",
+      severity: newDrugInteractions.some(i => i.severity === "major" || i.severity === "high") ? "critical" : "warning",
+      message: `${newDrugName} has ${newDrugInteractions.length} interaction(s) with current medications: ${newDrugInteractions.map(i => `${i.drug1}+${i.drug2} (${i.severity})`).join("; ")}`,
+      details: newDrugInteractions,
+    });
+  }
 
   if (newAlerts.length > 0) {
     predictions.push({
