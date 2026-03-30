@@ -1,0 +1,108 @@
+{
+  "app": { "name": "சாந்தி கேர்", "tagline": "முழுமையான கேர் ஹோம் மேலாண்மை" },
+  "nav": {
+    "dashboard": "டாஷ்போர்டு", "overview": "கண்ணோட்டம்", "reports": "அறிக்கைகள்",
+    "patientCare": "நோயாளி பராமரிப்பு", "patients": "குடியிருப்பாளர்கள்",
+    "homeCare": "தினசரி பராமரிப்பு குறிப்புகள்", "carePlans": "பராமரிப்பு திட்டங்கள்",
+    "medSchedule": "மருந்து அட்டவணை", "dietary": "உணவு திட்டங்கள்",
+    "medicalFile": "மருத்துவ கோப்புகள்", "operations": "செயல்பாடுகள்",
+    "beds": "படுக்கை மேலாண்மை", "incidents": "சம்பவங்கள்",
+    "visitors": "பார்வையாளர் பதிவு", "shiftHandover": "ஷிஃப்ட் ஹேண்ட்ஓவர்",
+    "familyUpdates": "குடும்ப புதுப்பிப்புகள்", "opd": "OPD",
+    "appointments": "சந்திப்புகள்", "prescriptions": "மருந்துச் சீட்டுகள்",
+    "dispensary": "மருந்தகம்", "medicines": "மருந்து இருப்பு",
+    "admin": "நிர்வாகம்", "users": "பணியாளர் மேலாண்மை",
+    "billing": "பில்லிங்", "dutyRoster": "பணி பட்டியல்",
+    "doctorQueue": "என் நோயாளிகள்", "clinical": "மருத்துவ"
+  },
+  "common": {
+    "search": "தேடு", "add": "சேர்", "edit": "திருத்து", "delete": "நீக்கு",
+    "save": "சேமி", "cancel": "ரத்து", "close": "மூடு", "print": "அச்சிடு",
+    "export": "ஏற்றுமதி", "filter": "வடிகட்டு", "all": "அனைத்தும்",
+    "active": "செயலில்", "inactive": "செயலற்றது", "pending": "நிலுவை",
+    "completed": "முடிந்தது", "loading": "ஏற்றுகிறது...", "noData": "தரவு இல்லை",
+    "confirm": "உறுதிசெய்", "yes": "ஆம்", "no": "இல்லை", "back": "பின்",
+    "next": "அடுத்தது", "submit": "சமர்ப்பி", "reset": "மீட்டமை",
+    "date": "தேதி", "time": "நேரம்", "name": "பெயர்", "phone": "தொலைபேசி",
+    "email": "மின்னஞ்சல்", "status": "நிலை", "actions": "செயல்கள்",
+    "type": "வகை", "notes": "குறிப்புகள்", "total": "மொத்தம்",
+    "today": "இன்று", "view": "பார்", "details": "விவரங்கள்"
+  },
+  "auth": {
+    "login": "உள்நுழை", "logout": "வெளியேறு", "username": "பயனர் பெயர்",
+    "password": "கடவுச்சொல்", "staffLogin": "பணியாளர் உள்நுழைவு",
+    "patientLogin": "நோயாளி போர்டல்", "receiptNo": "ரசீது எண்",
+    "forgotPassword": "கடவுச்சொல் மறந்துவிட்டதா?",
+    "sessionExpiring": "அமர்வு காலாவதியாகிறது",
+    "sessionWarning": "உங்கள் அமர்வு விரைவில் காலாவதியாகும்.",
+    "invalidCredentials": "தவறான பயனர் பெயர் அல்லது கடவுச்சொல்",
+    "tooManyAttempts": "அதிக முயற்சிகள். தயவுசெய்து காத்திருங்கள்.",
+    "quickDemo": "விரைவு டெமோ"
+  },
+  "dashboard": {
+    "totalResidents": "மொத்த குடியிருப்பாளர்கள்", "bedOccupancy": "படுக்கை நிரம்புதல்",
+    "todayAppointments": "இன்றைய சந்திப்புகள்", "revenue": "இன்றைய வருவாய்",
+    "visitors": "இன்றைய பார்வையாளர்கள்", "openIncidents": "திறந்த சம்பவங்கள்",
+    "lowStock": "குறைந்த இருப்பு மருந்துகள்", "pendingHandovers": "நிலுவை ஹேண்ட்ஓவர்",
+    "quickActions": "விரைவு செயல்கள்", "occupied": "நிரம்பியது", "available": "கிடைக்கும்"
+  },
+  "patient": {
+    "addNew": "புதிய குடியிருப்பாளர் சேர்", "name": "நோயாளி பெயர்",
+    "age": "வயது", "gender": "பாலினம்", "room": "அறை", "condition": "நிலை",
+    "guardian": "பாதுகாவலர்", "allergies": "ஒவ்வாமைகள்", "bloodGroup": "இரத்த வகை",
+    "admitDate": "சேர்க்கை தேதி", "emergency": "அவசர தொடர்பு",
+    "male": "ஆண்", "female": "பெண்", "other": "மற்றவை",
+    "vitals": "Vitals", "history": "வரலாறு", "careNotes": "பராமரிப்பு குறிப்புகள்"
+  },
+  "vitals": {
+    "temperature": "வெப்பநிலை", "bloodPressure": "இரத்த அழுத்தம்",
+    "pulse": "நாடி", "spo2": "SpO2", "glucose": "இரத்த சர்க்கரை",
+    "weight": "எடை", "respiration": "சுவாச வீதம்", "pain": "வலி நிலை"
+  },
+  "medication": {
+    "name": "மருந்து பெயர்", "dose": "அளவு", "frequency": "அதிர்வெண்",
+    "timing": "நேரம்", "duration": "கால அளவு", "beforeFood": "உணவுக்கு முன்",
+    "afterFood": "உணவுக்குப் பின்", "given": "கொடுக்கப்பட்டது", "pending": "நிலுவை",
+    "overdue": "தாமதம்", "markGiven": "கொடுத்ததாக குறி",
+    "medRounds": "மருந்து சுற்று", "compliance": "இணக்கம்"
+  },
+  "appointment": {
+    "newAppointment": "புதிய சந்திப்பு", "receipt": "ரசீது எண்.",
+    "doctor": "மருத்துவர்", "consultationType": "ஆலோசனை வகை",
+    "fee": "ஆலோசனை கட்டணம்", "scheduled": "திட்டமிடப்பட்டது",
+    "withDoctor": "மருத்துவரிடம்", "toDispensary": "மருந்தகத்திற்கு",
+    "dispensed": "வழங்கப்பட்டது"
+  },
+  "billing": {
+    "amount": "தொகை", "paid": "செலுத்தப்பட்டது", "pending": "நிலுவை",
+    "generateInvoice": "விலைப்பட்டியல் உருவாக்கு", "paymentMethod": "கட்டண முறை",
+    "cash": "பணம்", "upi": "UPI", "card": "கார்டு", "insurance": "காப்பீடு"
+  },
+  "incident": {
+    "reportIncident": "சம்பவம் புகார்", "severity": "தீவிரம்",
+    "low": "குறைவு", "moderate": "மிதமான", "high": "உயர்", "critical": "தீவிர",
+    "fall": "விழுதல்", "medicationError": "மருந்து பிழை",
+    "behavioral": "நடத்தை", "emergency": "மருத்துவ அவசரம்",
+    "resolved": "தீர்க்கப்பட்டது", "open": "திறந்தது", "monitoring": "கண்காணிப்பு"
+  },
+  "handover": {
+    "shiftHandover": "ஷிஃப்ட் ஹேண்ட்ஓவர்", "fromShift": "ஷிஃப்ட் இருந்து",
+    "toShift": "ஷிஃப்ட் வரை", "morning": "காலை", "afternoon": "மதியம்",
+    "evening": "மாலை", "night": "இரவு", "handedBy": "ஒப்படைத்தவர்",
+    "receivedBy": "பெற்றவர்", "criticalAlerts": "முக்கிய எச்சரிக்கைகள்",
+    "pendingTasks": "நிலுவை பணிகள்", "acknowledge": "ஏற்றுக்கொள்"
+  },
+  "family": {
+    "dailyUpdate": "தினசரி புதுப்பிப்பு", "medicalUpdate": "மருத்துவ புதுப்பிப்பு",
+    "incidentNotification": "சம்பவ அறிவிப்பு", "behavioralUpdate": "நடத்தை புதுப்பிப்பு",
+    "milestone": "சாதனை", "readByFamily": "குடும்பம் படித்தது",
+    "notYetRead": "இன்னும் படிக்கவில்லை", "postUpdate": "புதுப்பிப்பு பதிவிடு"
+  },
+  "offline": {
+    "online": "இணைக்கப்பட்டது", "offline": "ஆஃப்லைன்", "syncing": "ஒத்திசைக்கிறது",
+    "pending": "நிலுவை", "savedLocally": "மாற்றங்கள் உள்ளூரில் சேமிக்கப்பட்டன",
+    "syncFailed": "ஒத்திசைவு தோல்வி", "retry": "மீண்டும் முயற்சி",
+    "backOnline": "மீண்டும் ஆன்லைன் — மாற்றங்கள் ஒத்திசைக்கப்படுகின்றன"
+  },
+  "language": { "select": "மொழி", "current": "தமிழ்" }
+}

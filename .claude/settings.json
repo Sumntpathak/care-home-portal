@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find c:UserspathaDownloadscare-home-portalcare-homesrci18n -type f -name *.json -o -name *.js)",
+      "Bash(grep -r \"backgroundSync\\\\|workbox-background-sync\" /c/Users/patha/Downloads/care-home-portal/care-home/src /c/Users/patha/Downloads/care-home-portal/care-home/*.js)",
+      "Bash(find /c/Users/patha/Downloads/care-home-portal -name *.js -path */server/* -o -name server.js -o -name api.js)"
+    ]
+  }
+}

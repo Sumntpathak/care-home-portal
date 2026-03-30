@@ -1,0 +1,108 @@
+{
+  "app": { "name": "శాంతి కేర్", "tagline": "సమగ్ర కేర్ హోమ్ నిర్వహణ" },
+  "nav": {
+    "dashboard": "డాష్‌బోర్డ్", "overview": "అవలోకనం", "reports": "నివేదికలు",
+    "patientCare": "రోగి సంరక్షణ", "patients": "నివాసితులు",
+    "homeCare": "దైనందిన సంరక్షణ నోట్స్", "carePlans": "సంరక్షణ ప్రణాళికలు",
+    "medSchedule": "మందుల షెడ్యూల్", "dietary": "ఆహార ప్రణాళికలు",
+    "medicalFile": "వైద్య ఫైళ్లు", "operations": "కార్యకలాపాలు",
+    "beds": "బెడ్ నిర్వహణ", "incidents": "సంఘటనలు",
+    "visitors": "సందర్శకుల లాగ్", "shiftHandover": "షిఫ్ట్ హ్యాండోవర్",
+    "familyUpdates": "కుటుంబ నవీకరణలు", "opd": "OPD",
+    "appointments": "అపాయింట్‌మెంట్లు", "prescriptions": "ప్రిస్క్రిప్షన్లు",
+    "dispensary": "డిస్పెన్సరీ", "medicines": "మందుల స్టాక్",
+    "admin": "పరిపాలన", "users": "సిబ్బంది నిర్వహణ",
+    "billing": "బిల్లింగ్", "dutyRoster": "డ్యూటీ రోస్టర్",
+    "doctorQueue": "నా రోగులు", "clinical": "క్లినికల్"
+  },
+  "common": {
+    "search": "వెతకండి", "add": "జోడించు", "edit": "సవరించు", "delete": "తొలగించు",
+    "save": "సేవ్ చేయి", "cancel": "రద్దు", "close": "మూసివేయి", "print": "ప్రింట్",
+    "export": "ఎగుమతి", "filter": "ఫిల్టర్", "all": "అన్నీ",
+    "active": "యాక్టివ్", "inactive": "ఇన్యాక్టివ్", "pending": "పెండింగ్",
+    "completed": "పూర్తయింది", "loading": "లోడ్ అవుతోంది...", "noData": "డేటా లేదు",
+    "confirm": "నిర్ధారించు", "yes": "అవును", "no": "కాదు", "back": "వెనుకకు",
+    "next": "తదుపరి", "submit": "సమర్పించు", "reset": "రీసెట్",
+    "date": "తేదీ", "time": "సమయం", "name": "పేరు", "phone": "ఫోన్",
+    "email": "ఇమెయిల్", "status": "స్థితి", "actions": "చర్యలు",
+    "type": "రకం", "notes": "నోట్స్", "total": "మొత్తం",
+    "today": "ఈరోజు", "view": "చూడు", "details": "వివరాలు"
+  },
+  "auth": {
+    "login": "లాగిన్", "logout": "లాగౌట్", "username": "యూజర్ నేమ్",
+    "password": "పాస్‌వర్డ్", "staffLogin": "సిబ్బంది లాగిన్",
+    "patientLogin": "రోగి పోర్టల్", "receiptNo": "రసీదు నంబర్",
+    "forgotPassword": "పాస్‌వర్డ్ మర్చిపోయారా?",
+    "sessionExpiring": "సెషన్ ముగుస్తోంది",
+    "sessionWarning": "మీ సెషన్ త్వరలో ముగుస్తుంది.",
+    "invalidCredentials": "తప్పు యూజర్ నేమ్ లేదా పాస్‌వర్డ్",
+    "tooManyAttempts": "చాలా ఎక్కువ ప్రయత్నాలు. దయచేసి వేచి ఉండండి.",
+    "quickDemo": "క్విక్ డెమో"
+  },
+  "dashboard": {
+    "totalResidents": "మొత్తం నివాసితులు", "bedOccupancy": "బెడ్ ఆక్యుపెన్సీ",
+    "todayAppointments": "ఈరోజు అపాయింట్‌మెంట్లు", "revenue": "ఈరోజు ఆదాయం",
+    "visitors": "ఈరోజు సందర్శకులు", "openIncidents": "ఓపెన్ సంఘటనలు",
+    "lowStock": "తక్కువ స్టాక్ మందులు", "pendingHandovers": "పెండింగ్ హ్యాండోవర్",
+    "quickActions": "క్విక్ యాక్షన్స్", "occupied": "నిండింది", "available": "అందుబాటులో"
+  },
+  "patient": {
+    "addNew": "కొత్త నివాసిని జోడించు", "name": "రోగి పేరు",
+    "age": "వయసు", "gender": "లింగం", "room": "గది", "condition": "పరిస్థితి",
+    "guardian": "సంరక్షకుడు", "allergies": "అలర్జీలు", "bloodGroup": "బ్లడ్ గ్రూప్",
+    "admitDate": "చేరిక తేదీ", "emergency": "అత్యవసర సంప్రదింపు",
+    "male": "పురుషుడు", "female": "స్త్రీ", "other": "ఇతర",
+    "vitals": "Vitals", "history": "చరిత్ర", "careNotes": "సంరక్షణ నోట్స్"
+  },
+  "vitals": {
+    "temperature": "ఉష్ణోగ్రత", "bloodPressure": "రక్తపోటు",
+    "pulse": "నాడి", "spo2": "SpO2", "glucose": "రక్త చక్కెర",
+    "weight": "బరువు", "respiration": "శ్వాస రేటు", "pain": "నొప్పి స్థాయి"
+  },
+  "medication": {
+    "name": "మందు పేరు", "dose": "మోతాదు", "frequency": "ఫ్రీక్వెన్సీ",
+    "timing": "సమయం", "duration": "వ్యవధి", "beforeFood": "భోజనానికి ముందు",
+    "afterFood": "భోజనం తర్వాత", "given": "ఇవ్వబడింది", "pending": "పెండింగ్",
+    "overdue": "ఆలస్యం", "markGiven": "ఇచ్చినట్లు గుర్తించు",
+    "medRounds": "మందుల రౌండ్స్", "compliance": "కంప్లయన్స్"
+  },
+  "appointment": {
+    "newAppointment": "కొత్త అపాయింట్‌మెంట్", "receipt": "రసీదు నం.",
+    "doctor": "వైద్యుడు", "consultationType": "సంప్రదింపు రకం",
+    "fee": "సంప్రదింపు రుసుము", "scheduled": "షెడ్యూల్ చేయబడింది",
+    "withDoctor": "వైద్యుని వద్ద", "toDispensary": "డిస్పెన్సరీకి",
+    "dispensed": "అందజేయబడింది"
+  },
+  "billing": {
+    "amount": "మొత్తం", "paid": "చెల్లించబడింది", "pending": "పెండింగ్",
+    "generateInvoice": "ఇన్‌వాయిస్ రూపొందించు", "paymentMethod": "చెల్లింపు పద్ధతి",
+    "cash": "నగదు", "upi": "UPI", "card": "కార్డ్", "insurance": "బీమా"
+  },
+  "incident": {
+    "reportIncident": "సంఘటన నివేదించు", "severity": "తీవ్రత",
+    "low": "తక్కువ", "moderate": "మధ్యస్థం", "high": "ఎక్కువ", "critical": "క్లిష్టం",
+    "fall": "పడిపోవడం", "medicationError": "మందు తప్పు",
+    "behavioral": "ప్రవర్తన", "emergency": "వైద్య అత్యవసరం",
+    "resolved": "పరిష్కరించబడింది", "open": "ఓపెన్", "monitoring": "పర్యవేక్షణ"
+  },
+  "handover": {
+    "shiftHandover": "షిఫ్ట్ హ్యాండోవర్", "fromShift": "షిఫ్ట్ నుండి",
+    "toShift": "షిఫ్ట్ వరకు", "morning": "ఉదయం", "afternoon": "మధ్యాహ్నం",
+    "evening": "సాయంత్రం", "night": "రాత్రి", "handedBy": "అందజేసినవారు",
+    "receivedBy": "స్వీకరించినవారు", "criticalAlerts": "క్లిష్ట హెచ్చరికలు",
+    "pendingTasks": "పెండింగ్ టాస్క్‌లు", "acknowledge": "అంగీకరించు"
+  },
+  "family": {
+    "dailyUpdate": "దైనందిన నవీకరణ", "medicalUpdate": "వైద్య నవీకరణ",
+    "incidentNotification": "సంఘటన నోటిఫికేషన్", "behavioralUpdate": "ప్రవర్తన నవీకరణ",
+    "milestone": "మైలురాయి", "readByFamily": "కుటుంబం చదివింది",
+    "notYetRead": "ఇంకా చదవలేదు", "postUpdate": "అప్‌డేట్ పోస్ట్ చేయి"
+  },
+  "offline": {
+    "online": "కనెక్ట్ అయింది", "offline": "ఆఫ్‌లైన్", "syncing": "సింక్ అవుతోంది",
+    "pending": "పెండింగ్", "savedLocally": "మార్పులు లోకల్‌గా సేవ్ అయ్యాయి",
+    "syncFailed": "సింక్ విఫలం", "retry": "మళ్ళీ ప్రయత్నించు",
+    "backOnline": "తిరిగి ఆన్‌లైన్ — మార్పులు సింక్ అవుతున్నాయి"
+  },
+  "language": { "select": "భాష", "current": "తెలుగు" }
+}

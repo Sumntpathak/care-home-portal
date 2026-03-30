@@ -1,0 +1,12 @@
+version: '3.8'
+services:
+  shanti-care-lan:
+    build: .
+    ports:
+      - "8787:8787"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - PORT=8787
+      - CLOUD_API_URL=${CLOUD_API_URL:-}
+    restart: unless-stopped

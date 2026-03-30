@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shanti Care — Offline</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      color: #1e293b;
+    }
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 48px 40px;
+      max-width: 420px;
+      text-align: center;
+      box-shadow: 0 4px 24px rgba(0,0,0,.06);
+    }
+    .icon {
+      width: 64px; height: 64px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #fef3c7, #fde68a);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 28px;
+    }
+    h1 { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+    p { font-size: 14px; color: #64748b; line-height: 1.6; margin-bottom: 20px; }
+    .status {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #fef3c7; color: #92400e;
+      padding: 6px 14px; border-radius: 20px;
+      font-size: 12px; font-weight: 600;
+      margin-bottom: 20px;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; }
+    .info {
+      background: #f1f5f9; border-radius: 10px;
+      padding: 14px; font-size: 12px; color: #475569;
+      line-height: 1.7; text-align: left;
+    }
+    button {
+      margin-top: 20px; padding: 12px 24px;
+      background: linear-gradient(135deg, #4f8cdb, #3a6fb5);
+      color: white; border: none; border-radius: 8px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">📡</div>
+    <div class="status"><div class="dot"></div> Offline Mode</div>
+    <h1>You're offline</h1>
+    <p>Your data is saved safely on this device. The app will sync automatically when the connection is restored.</p>
+    <div class="info">
+      <strong>What's available offline:</strong><br>
+      ✓ View cached patient records<br>
+      ✓ View medication schedules<br>
+      ✓ Record care notes (queued for sync)<br>
+      ✓ Administer medications (queued for sync)
+    </div>
+    <button onclick="location.reload()">Try Again</button>
+  </div>
+</body>
+</html>

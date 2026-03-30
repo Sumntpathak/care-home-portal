@@ -1,0 +1,216 @@
+// ================================================================
+//  CARE HOME PORTAL — Backend API (Code.gs)
+//  REST API: doGet + doPost → JSON responses
+//  Frontend: React on GitHub Pages
+//  Database: Google Sheets
+// ================================================================
+
+function jsonResponse(data) {
+  return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
+}
+
+// ===== GET ROUTER =====
+function doGet(e) {
+  try {
+    var p = e ? e.parameter : {};
+    var action = p.action || 'ping';
+    switch (action) {
+      case 'ping':              return jsonResponse({ success:true, message:'Care Home API running', ts:new Date().toISOString() });
+      case 'login':             return jsonResponse(handleLogin(p.username, p.password));
+      case 'patientLogin':      return jsonResponse(handlePatientLogin(p.receipt));
+      case 'getUsers':          return jsonResponse({ success:true, data:getUsers() });
+      case 'getPatients':       return jsonResponse({ success:true, data:getPatients() });
+      case 'getAppointments':   return jsonResponse({ success:true, data:getAppointments(p.filter, p.date) });
+      case 'getDoctorAppts':    return jsonResponse({ success:true, data:getDoctorAppointments(p.doctor) });
+      case 'getDispensaryQueue':return jsonResponse({ success:true, data:getDispensaryQueue() });
+      case 'getDispensed':      return jsonResponse({ success:true, data:getDispensed() });
+      case 'getPrescriptions':  return jsonResponse({ success:true, data:getPrescriptions(p.filter) });
+      case 'getDoctorRx':       return jsonResponse({ success:true, data:getDoctorRx(p.doctor) });
+      case 'getMedicines':      return jsonResponse({ success:true, data:getMedicines() });
+      case 'getBilling':        return jsonResponse({ success:true, data:getBilling() });
+      case 'getDutyRoster':     return jsonResponse({ success:true, data:getDutyRoster() });
+      case 'getDashboard':      return jsonResponse({ success:true, data:getDashboard(p.role, p.name, p.position) });
+      case 'getSalaryRecords':  return jsonResponse({ success:true, data:getSalaryRecords() });
+      case 'getStaffSalary':    return jsonResponse({ success:true, data:getStaffSalary(p.name) });
+      case 'getLowStock':       return jsonResponse({ success:true, data:getLowStock() });
+      case 'getHomeCarePatients': return jsonResponse({ success:true, data:getHomeCarePatients() });
+      case 'getHomeCareNotes':  return jsonResponse({ success:true, data:getHomeCareNotes(p.patientId) });
+      default:                  return jsonResponse({ success:false, error:'Unknown action: '+action });
+    }
+  } catch(err) { return jsonResponse({ success:false, error:err.message }); }
+}
+
+// ===== POST ROUTER =====
+function doPost(e) {
+  try {
+    var body = JSON.parse(e.postData.contents);
+    var action = body.action, d = body.data || {};
+    switch (action) {
+      case 'addUser':            return jsonResponse(addUser(d));
+      case 'addPatient':         return jsonResponse(addPatient(d));
+      case 'createAppointment':  return jsonResponse(createAppointment(d));
+      case 'updateApptStatus':   return jsonResponse(updateApptStatus(d.receiptNo, d.status));
+      case 'savePrescription':   return jsonResponse(savePrescription(d));
+      case 'markDispensed':      return jsonResponse(markDispensed(d.receiptNo));
+      case 'addMedicine':        return jsonResponse(addMedicine(d));
+      case 'addSalaryRecord':    return jsonResponse(addSalaryRecord(d));
+      case 'addHomeCarePatient': return jsonResponse(addHomeCarePatient(d));
+      case 'addHomeCareNote':    return jsonResponse(addHomeCareNote(d));
+      case 'updateHomeCarePatient': return jsonResponse(updateHomeCarePatient(d));
+      case 'updateMedicine':     return jsonResponse(updateMedicine(d));
+      case 'updateBilling':      return jsonResponse(updateBilling(d));
+      default:                   return jsonResponse({ success:false, error:'Unknown action: '+action });
+    }
+  } catch(err) { return jsonResponse({ success:false, error:err.message }); }
+}
+
+// ===== SHEET HELPERS =====
+function _sheet(name) { return SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name); }
+function _read(name) {
+  var s = _sheet(name); if(!s) return [];
+  var d = s.getDataRange().getValues(); if(d.length<2) return [];
+  var h = d[0];
+  return d.slice(1).map(function(r,i) {
+    var o = {}; h.forEach(function(k,j){ o[String(k).trim()] = r[j]; }); o._row = i+2; return o;
+  });
+}
+function _append(name, obj) {
+  var s = _sheet(name); if(!s) return false;
+  var h = s.getRange(1,1,1,s.getLastColumn()).getValues()[0];
+  s.appendRow(h.map(function(k){ return obj[String(k).trim()]||''; }));
+  return true;
+}
+function _update(name, row, col, val) {
+  var s = _sheet(name); if(!s) return false;
+  var h = s.getRange(1,1,1,s.getLastColumn()).getValues()[0].map(function(k){return String(k).trim()});
+  var ci = h.indexOf(col); if(ci===-1) return false;
+  s.getRange(row, ci+1).setValue(val); return true;
+}
+function _formatDate(d) {
+  if (!d) return '';
+  if (d instanceof Date) return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  return String(d);
+}
+var TODAY = new Date().toISOString().split('T')[0];
+
+// ===== AUTH =====
+function handleLogin(username, password) {
+  if(!username||!password) return { success:false, error:'Username and password required' };
+  var users = _read('Users'), inp = String(username).trim().toLowerCase(), pw = String(password).trim();
+  for(var i=0;i<users.length;i++){
+    var u=users[i], eid=String(u['Email/ID']||'').trim().toLowerCase(), nm=String(u['userName']||'').trim().toLowerCase();
+    if((eid===inp||nm===inp) && String(u['Password']||'').trim()===pw){
+      var raw=String(u['Role']||'').trim(), role=raw.charAt(0).toUpperCase()+raw.slice(1).toLowerCase();
+      return { success:true, user:{ name:u['userName'], email:u['Email/ID'], role:role, position:u['Position']||'', shiftStart:u['Shift Start']||'', shiftEnd:u['Shift End']||'', status:u['Status']||'Active' }};
+    }
+  }
+  return { success:false, error:'Invalid username or password' };
+}
+
+function handlePatientLogin(receipt) {
+  if(!receipt) return { success:false, error:'Receipt number required' };
+  var rec=String(receipt).trim().toUpperCase(), appts=_read('Appointments'), match=null;
+  for(var i=0;i<appts.length;i++){if(String(appts[i]['Receipt No']).trim().toUpperCase()===rec){match=appts[i];break;}}
+  if(!match) return { success:false, error:'Receipt number not found' };
+  var pn=match['Patient Name'];
+  var allAppts=appts.filter(function(a){return a['Patient Name']===pn}).map(function(a){return{receiptNo:a['Receipt No'],date:a['Date'],doctor:a['Assigned Dr'],type:a['Type'],bill:a['Bill Amount'],status:a['Status']}});
+  var recs=_read('Medical_Records').filter(function(r){return String(r['Receipt No']).trim().toUpperCase()===rec}).map(function(r){return{receiptNo:r['Receipt No'],doctor:r['Doctor'],diagnosis:r['Diagnosis'],medications:r['Medications'],dosage:r['Dosage'],timing:r['Timing'],amount:r['Amount'],notes:r['Notes'],status:r['Status'],date:r['Date']}});
+  return { success:true, patient:{name:pn,phone:match['Phone'],receiptNo:rec}, appointments:allAppts, records:recs };
+}
+
+// ===== USERS =====
+function getUsers(){return _read('Users').map(function(u){return{name:u['userName'],email:u['Email/ID'],role:u['Role'],position:u['Position'],shiftStart:u['Shift Start'],shiftEnd:u['Shift End'],status:u['Status']||'Active',_row:u._row}})}
+function addUser(d){
+  if(!d.name||!d.username||!d.password||!d.role) return{success:false,error:'Missing fields'};
+  var users=_read('Users');
+  for(var i=0;i<users.length;i++){if(String(users[i]['Email/ID']).trim().toLowerCase()===d.username.trim().toLowerCase()) return{success:false,error:'Username exists'};}
+  return _append('Users',{'userName':d.name,'Email/ID':d.username,'Password':d.password,'Role':d.role,'Position':d.position||'','Shift Start':d.shiftStart||'','Shift End':d.shiftEnd||'','Status':'Active'})?{success:true}:{success:false,error:'Failed'};
+}
+
+// ===== PATIENTS =====
+function getPatients(){return _read('Patients').map(function(p){return{id:p['Patient ID'],name:p['Name'],age:p['Age'],gender:p['Gender'],phone:p['Phone'],room:p['Room'],condition:p['Condition'],guardian:p['Guardian'],admitted:p['Admitted'],status:p['Status']}})}
+function addPatient(d){
+  if(!d.name||!d.phone) return{success:false,error:'Name and phone required'};
+  var id='PAT-'+new Date().getTime().toString().slice(-6);
+  return _append('Patients',{'Patient ID':id,'Name':d.name,'Age':d.age||'','Gender':d.gender||'','Phone':d.phone,'Room':d.room||'','Condition':d.condition||'','Guardian':d.guardian||'','Admitted':TODAY,'Status':d.status||'Active'})?{success:true,patientId:id}:{success:false,error:'Failed'};
+}
+
+// ===== APPOINTMENTS =====
+function getAppointments(filter,date){
+  var data=_read('Appointments');
+  if(filter==='today'||date){var td=date||TODAY;data=data.filter(function(a){var d=a['Date'];if(d instanceof Date)d=d.toISOString().split('T')[0];return String(d)===td})}
+  if(filter&&filter!=='today'&&filter!=='all'){data=data.filter(function(a){return a['Status']===filter})}
+  return data.map(function(a){return{receiptNo:a['Receipt No'],date:_formatDate(a['Date']),patientName:a['Patient Name'],phone:a['Phone'],doctor:a['Assigned Dr'],type:a['Type'],bill:a['Bill Amount'],status:a['Status'],createdBy:a['Created By']}});
+}
+function createAppointment(d){
+  if(!d.patientName||!d.doctor) return{success:false,error:'Patient and doctor required'};
+  var rec='REC-'+String(Math.floor(1000+Math.random()*9000))+'-'+new Date().getTime().toString().slice(-4);
+  var ok=_append('Appointments',{'Receipt No':rec,'Date':d.date||TODAY,'Patient Name':d.patientName,'Phone':d.phone||'','Assigned Dr':d.doctor,'Type':d.type||'Checkup','Bill Amount':d.billAmount||0,'Status':'Scheduled','Created By':d.createdBy||''});
+  return ok?{success:true,receiptNo:rec}:{success:false,error:'Failed'};
+}
+function updateApptStatus(receiptNo,newStatus){
+  var data=_read('Appointments');
+  for(var i=0;i<data.length;i++){if(String(data[i]['Receipt No']).trim()===String(receiptNo).trim()){_update('Appointments',data[i]._row,'Status',newStatus);return{success:true}}}
+  return{success:false,error:'Not found'};
+}
+function getDoctorAppointments(doctor){
+  return _read('Appointments').filter(function(a){return String(a['Assigned Dr']).trim()===String(doctor).trim()&&(a['Status']==='With Doctor'||a['Status']==='Scheduled')}).map(function(a){return{receiptNo:a['Receipt No'],date:a['Date'],patientName:a['Patient Name'],phone:a['Phone'],type:a['Type'],status:a['Status']}});
+}
+
+// ===== PRESCRIPTIONS =====
+function getPrescriptions(filter){
+  var data=_read('Medical_Records');
+  if(filter&&filter!=='all') data=data.filter(function(r){return r['Status']===filter});
+  return data.map(function(r){return{receiptNo:r['Receipt No'],doctor:r['Doctor'],patientName:r['Patient Name'],diagnosis:r['Diagnosis'],medications:r['Medications'],dosage:r['Dosage'],timing:r['Timing'],amount:r['Amount'],notes:r['Notes'],status:r['Status'],date:r['Date'],_row:r._row}});
+}
+function getDoctorRx(doctor){return getPrescriptions().filter(function(r){return String(r.doctor).trim()===String(doctor).trim()})}
+function savePrescription(d){
+  if(!d.receiptNo||!d.diagnosis||!d.medications) return{success:false,error:'Missing fields'};
+  var ok=_append('Medical_Records',{'Receipt No':d.receiptNo,'Doctor':d.doctorName||'','Patient Name':d.patientName||'','Diagnosis':d.diagnosis,'Medications':d.medications,'Dosage':d.dosage||'','Timing':d.timing||'','Amount':d.amount||'','Notes':d.notes||'','Status':'To Dispensary','Date':TODAY});
+  if(ok){updateApptStatus(d.receiptNo,'To Dispensary');return{success:true}} return{success:false,error:'Failed'};
+}
+
+// ===== DISPENSARY =====
+function getDispensaryQueue(){return getPrescriptions('To Dispensary')}
+function getDispensed(){return getPrescriptions('Dispensed')}
+function markDispensed(receiptNo){
+  var recs=_read('Medical_Records'),ok=false;
+  for(var i=0;i<recs.length;i++){if(String(recs[i]['Receipt No']).trim()===String(receiptNo).trim()&&recs[i]['Status']==='To Dispensary'){_update('Medical_Records',recs[i]._row,'Status','Dispensed');ok=true}}
+  if(ok) updateApptStatus(receiptNo,'Completed');
+  return{success:ok};
+}
+
+// ===== DUTY ROSTER =====
+function getDutyRoster(){return _read('Users').filter(function(u){var r=String(u['Role']).toLowerCase();return r==='staff'||r==='doctor'}).map(function(u){return{name:u['userName'],role:u['Role'],position:u['Position'],shiftStart:u['Shift Start'],shiftEnd:u['Shift End'],status:u['Status']||'Active'}})}
+
+// ===== SALARY =====
+function getSalaryRecords(){return _read('Salary').map(function(s){return{id:s['ID'],name:s['Name'],month:s['Month'],year:s['Year'],basic:s['Basic Salary'],allowances:s['Allowances'],deductions:s['Deductions'],net:s['Net Salary'],status:s['Status'],date:_formatDate(s['Date']),_row:s._row}})}
+function addSalaryRecord(d){if(!d.name||!d.month||!d.year) return{success:false,error:'Name, month, and year required'};return _append('Salary',{'ID':d.id||'','Name':d.name,'Month':d.month,'Year':d.year,'Basic Salary':d.basic||0,'Allowances':d.allowances||0,'Deductions':d.deductions||0,'Net Salary':d.net||0,'Status':d.status||'Pending','Date':TODAY})?{success:true}:{success:false,error:'Failed'}}
+function getStaffSalary(name){return getSalaryRecords().filter(function(s){return String(s.name).trim()===String(name).trim()})}
+
+// ===== MEDICINES =====
+function getMedicines(){return _read('Medicines').map(function(m){return{name:m['Name'],category:m['Category'],stock:m['Stock'],unit:m['Unit'],minStock:m['Min Stock'],price:m['Price'],supplier:m['Supplier'],expiry:m['Expiry'],isLow:parseInt(m['Stock'])<=parseInt(m['Min Stock']),_row:m._row}})}
+function addMedicine(d){if(!d.name) return{success:false,error:'Name required'};return _append('Medicines',{'Name':d.name,'Category':d.category||'','Stock':d.stock||0,'Unit':d.unit||'Tablets','Min Stock':d.minStock||10,'Price':d.price||0,'Supplier':d.supplier||'','Expiry':d.expiry||''})?{success:true}:{success:false,error:'Failed'}}
+function updateMedicine(d){if(!d.name) return{success:false,error:'Name required'};var meds=_read('Medicines');for(var i=0;i<meds.length;i++){if(String(meds[i]['Name']).trim()===String(d.name).trim()){_update('Medicines',meds[i]._row,'Stock',d.stock||meds[i]['Stock']);_update('Medicines',meds[i]._row,'Min Stock',d.minStock||meds[i]['Min Stock']);return{success:true}}}return{success:false,error:'Not found'}}
+function getLowStock(){return getMedicines().filter(function(m){return m.isLow})}
+
+// ===== BILLING =====
+function getBilling(){return _read('Appointments').map(function(a){return{receiptNo:a['Receipt No'],date:_formatDate(a['Date']),patientName:a['Patient Name'],doctor:a['Assigned Dr'],bill:a['Bill Amount'],status:a['Status']}})}
+function updateBilling(d){if(!d.receiptNo) return{success:false,error:'Receipt No required'};var appts=_read('Appointments');for(var i=0;i<appts.length;i++){if(String(appts[i]['Receipt No']).trim()===String(d.receiptNo).trim()){_update('Appointments',appts[i]._row,'Bill Amount',d.bill||appts[i]['Bill Amount']);return{success:true}}}return{success:false,error:'Not found'}}
+
+// ===== HOME CARE =====
+function getHomeCarePatients(){return _read('Home_Care').map(function(p){return{id:p['Patient ID'],name:p['Name'],age:p['Age'],phone:p['Phone'],address:p['Address'],condition:p['Condition'],caregiver:p['Caregiver'],schedule:p['Schedule'],status:p['Status'],notes:p['Notes'],date:_formatDate(p['Date']),_row:p._row}})}
+function addHomeCarePatient(d){if(!d.name||!d.phone) return{success:false,error:'Name and phone required'};var id='HC-'+new Date().getTime().toString().slice(-6);return _append('Home_Care',{'Patient ID':id,'Name':d.name,'Age':d.age||'','Phone':d.phone,'Address':d.address||'','Condition':d.condition||'','Caregiver':d.caregiver||'','Schedule':d.schedule||'','Status':d.status||'Active','Notes':d.notes||'','Date':TODAY})?{success:true,patientId:id}:{success:false,error:'Failed'}}
+function getHomeCareNotes(patientId){return _read('Home_Care_Notes').filter(function(n){return String(n['Patient ID']).trim()===String(patientId).trim()}).map(function(n){return{id:n['Note ID'],patientId:n['Patient ID'],date:_formatDate(n['Date']),note:n['Note'],caregiver:n['Caregiver'],_row:n._row}})}
+function addHomeCareNote(d){if(!d.patientId||!d.note) return{success:false,error:'Patient ID and note required'};var id='NOTE-'+new Date().getTime().toString().slice(-6);return _append('Home_Care_Notes',{'Note ID':id,'Patient ID':d.patientId,'Date':TODAY,'Note':d.note,'Caregiver':d.caregiver||''})?{success:true,noteId:id}:{success:false,error:'Failed'}}
+function updateHomeCarePatient(d){if(!d.id) return{success:false,error:'Patient ID required'};var pats=_read('Home_Care');for(var i=0;i<pats.length;i++){if(String(pats[i]['Patient ID']).trim()===String(d.id).trim()){_update('Home_Care',pats[i]._row,'Status',d.status||pats[i]['Status']);_update('Home_Care',pats[i]._row,'Notes',d.notes||pats[i]['Notes']);return{success:true}}}return{success:false,error:'Not found'}}
+
+// ===== DASHBOARD =====
+function getDashboard(role,userName,position){
+  var appts=_read('Appointments'),recs=_read('Medical_Records'),patients=_read('Patients'),meds=_read('Medicines');
+  var todayA=appts.filter(function(a){var d=a['Date'];if(d instanceof Date)d=d.toISOString().split('T')[0];return String(d)===TODAY});
+  var s={totalPatients:patients.length,todayAppointments:todayA.length,pendingDispensary:recs.filter(function(r){return r['Status']==='To Dispensary'}).length,totalMedicines:meds.length,lowStock:meds.filter(function(m){return parseInt(m['Stock'])<=parseInt(m['Min Stock'])}).length,totalUsers:_read('Users').length,revenue:todayA.reduce(function(s,a){return s+(parseInt(a['Bill Amount'])||0)},0),pendingBills:appts.filter(function(a){return a['Status']!=='Completed'&&parseInt(a['Bill Amount'])>0}).length,todayList:todayA.map(function(a){return{receiptNo:a['Receipt No'],patientName:a['Patient Name'],doctor:a['Assigned Dr'],type:a['Type']||'Checkup',bill:a['Bill Amount'],status:a['Status']}})};
+  if(role==='Doctor'){s.myWaiting=appts.filter(function(a){return String(a['Assigned Dr']).trim()===String(userName).trim()&&(a['Status']==='With Doctor'||a['Status']==='Scheduled')}).length;s.myRx=recs.filter(function(r){return String(r['Doctor']).trim()===String(userName).trim()}).length}
+  return s;
+}
+
