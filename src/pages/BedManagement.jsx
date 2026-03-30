@@ -95,8 +95,8 @@ export default function BedManagement() {
   const handleDeleteRoom = async (room) => {
     const hasOccupied = room.beds.some(b => b.status === "Occupied");
     if (hasOccupied) return addToast("Cannot delete room with occupied beds.", "error");
-    if (!confirm(`Delete room ${room.name}? This cannot be undone.`)) return;
     await deleteRoom(room.id);
+    addToast(`Room "${room.name}" deleted.`, "info");
     reload();
   };
 
@@ -113,9 +113,9 @@ export default function BedManagement() {
   const handleRemoveBed = async (room, bedId) => {
     const bed = room.beds.find(b => b.id === bedId);
     if (bed && bed.status === "Occupied") return addToast("Cannot remove an occupied bed.", "error");
-    if (!confirm(`Remove bed ${bedId}?`)) return;
     const updatedBeds = room.beds.filter(b => b.id !== bedId);
     await updateRoom({ id: room.id, beds: updatedBeds });
+    addToast(`Bed "${bedId}" removed.`, "info");
     reload();
   };
 

@@ -57,7 +57,7 @@ export default function Patients() {
       </div>
     )},
     { key: "id", label: "ID", cellStyle: {fontFamily:"monospace",fontSize:"12px"} },
-    { key: "ageGender", label: "Age / Gender", render: (p) => `${p.age ? `${p.age} yrs` : "—"} · ${p.gender}` },
+    { key: "age", label: "Age / Gender", render: (p) => `${p.age ? `${p.age} yrs` : "—"} · ${p.gender}` },
     { key: "room", label: "Room" },
     { key: "condition", label: "Condition", render: (p) => { const c = conditionColor(p.condition); return <span style={{background:c.bg,color:c.color,padding:"2px 8px",borderRadius:"4px",fontSize:"11px",fontWeight:"600"}}>{p.condition||"—"}</span>; }},
     { key: "guardian", label: "Guardian", cellStyle: {fontSize:"12px"} },

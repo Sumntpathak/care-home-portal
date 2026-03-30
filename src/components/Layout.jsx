@@ -416,7 +416,7 @@ export default function Layout() {
             </div>
             <div className="topbar-search">
               <Search size={15} />
-              <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search patients, rooms, records..." />
+              <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search patients, rooms, records..." aria-label="Search patients, rooms, records" />
             </div>
           </div>
           <div className="topbar-right">
@@ -427,11 +427,11 @@ export default function Layout() {
                 <Siren size={14} /> SOS
               </button>
             )}
-            <button className="topbar-btn" onClick={() => setTheme(t => t === "dark" ? "light" : "dark")} title="Toggle theme">
+            <button className="topbar-btn" onClick={() => setTheme(t => t === "dark" ? "light" : "dark")} title="Toggle theme" aria-label="Toggle dark mode">
               {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
             </button>
             <div ref={notifRef} style={{ position: "relative" }}>
-              <button className="topbar-btn" onClick={() => setShowNotifications(s => !s)} title="Notifications">
+              <button className="topbar-btn" onClick={() => setShowNotifications(s => !s)} title="Notifications" aria-label="Notifications">
                 <Bell size={16} />
                 {unreadCount > 0 && <span className="notif-dot" />}
               </button>

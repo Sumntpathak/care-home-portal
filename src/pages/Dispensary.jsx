@@ -121,6 +121,7 @@ export default function Dispensary() {
             <DataTable
               columns={queueColumns}
               data={queue}
+              loading={loading}
               searchFields={["receiptNo", "patientName", "doctor", "diagnosis"]}
               searchPlaceholder="Search queue…"
               emptyMessage="Queue is clear"
@@ -136,6 +137,7 @@ export default function Dispensary() {
             <DataTable
               columns={doneColumns}
               data={dispensed}
+              loading={loading}
               searchFields={["receiptNo", "patientName", "doctor", "diagnosis"]}
               searchPlaceholder="Search dispensed records…"
               emptyMessage="No records yet"

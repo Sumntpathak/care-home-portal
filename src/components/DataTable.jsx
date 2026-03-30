@@ -81,7 +81,7 @@ export default function DataTable({
       {!hideSearch && searchFields?.length > 0 && (
         <div className="dt-search">
           <Search size={14} />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder={searchPlaceholder} />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder={searchPlaceholder} aria-label="Search table" />
           {search && <button className="dt-search-clear" onClick={() => setSearch("")}>&times;</button>}
         </div>
       )}
