@@ -3,6 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { getVisitors, addVisitor, checkOutVisitor, getHomeCarePatients } from "../api/sheets";
 import { UserCheck, Plus, X, Search, LogOut, Clock } from "lucide-react";
 import { useToast } from "../components/Toast";
+import { validateName } from "../utils/security";
 
 
 export default function VisitorLog() {
@@ -37,7 +38,8 @@ export default function VisitorLog() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.visitorName || !form.patientName) return;
+    if (!validateName(form.visitorName)) { addToast("Visitor name must be 2-100 characters.", "error"); return; }
+    if (!form.patientName) { addToast("Select a resident to visit.", "error"); return; }
     setSaving(true);
     try {
       await addVisitor({ ...form, date: dateFilter, badge: `V-${Date.now().toString().slice(-3)}` });

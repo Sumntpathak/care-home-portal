@@ -40,7 +40,9 @@ export default function FamilyPortal() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.message || !form.patientName) return;
+    if (!form.patientId) { addToast("Select a resident.", "error"); return; }
+    if (!form.message?.trim()) { addToast("Message cannot be empty.", "error"); return; }
+    if (form.message.trim().length < 10) { addToast("Message must be at least 10 characters.", "error"); return; }
     setSaving(true);
     try {
       await addFamilyUpdate(form);

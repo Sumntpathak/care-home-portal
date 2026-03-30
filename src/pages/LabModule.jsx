@@ -155,10 +155,11 @@ function NewOrderModal({ onClose, onSave }) {
     }));
   };
 
+  const { addToast } = useToast();
   const handleSave = async (e) => {
     e.preventDefault();
-    if (!form.patientName) return;
-    if (form.tests.length === 0) return;
+    if (!form.patientName.trim()) { addToast("Patient name is required.", "error"); return; }
+    if (form.tests.length === 0) { addToast("Select at least one test.", "error"); return; }
     setSaving(true);
     await onSave({
       ...form,

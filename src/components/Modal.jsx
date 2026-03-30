@@ -24,12 +24,12 @@ export default function Modal({ children, onClose, title, maxWidth = 600, noPadd
   }, [onClose]);
 
   return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose?.()}>
+    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title" onClick={e => e.target === e.currentTarget && onClose?.()}>
       <div className="modal-content" style={{ maxWidth }}>
         {title && (
           <div className="modal-header">
-            <h3 className="modal-title">{title}</h3>
-            <button className="modal-close" onClick={onClose}><X size={16} /></button>
+            <h3 className="modal-title" id="modal-title">{title}</h3>
+            <button className="modal-close" onClick={onClose} aria-label="Close dialog"><X size={16} /></button>
           </div>
         )}
         <div className={noPadding ? "" : "modal-body"}>

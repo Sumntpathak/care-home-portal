@@ -19,6 +19,17 @@ export default function DataTable({
   hideSearch = false,
 }) {
   const [search, setSearch] = useState("");
+  const [sortKey, setSortKey] = useState(null);
+  const [sortDir, setSortDir] = useState("asc");
+
+  const handleSort = (key) => {
+    if (sortKey === key) {
+      setSortDir(d => d === "asc" ? "desc" : "asc");
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  };
 
   const filtered = useMemo(() => {
     if (!search.trim() || !searchFields?.length) return data;
@@ -31,11 +42,38 @@ export default function DataTable({
     );
   }, [data, search, searchFields]);
 
-  const { paginated, Pager } = usePagination(filtered, perPage);
+  const sorted = useMemo(() => {
+    if (!sortKey) return filtered;
+    return [...filtered].sort((a, b) => {
+      const av = a[sortKey] ?? "";
+      const bv = b[sortKey] ?? "";
+      if (typeof av === "number" && typeof bv === "number") {
+        return sortDir === "asc" ? av - bv : bv - av;
+      }
+      return sortDir === "asc"
+        ? String(av).localeCompare(String(bv))
+        : String(bv).localeCompare(String(av));
+    });
+  }, [filtered, sortKey, sortDir]);
+
+  const { paginated, Pager } = usePagination(sorted, perPage);
   const colCount = columns.length + (actions ? 1 : 0);
 
   if (loading) {
-    return <div className="dt-loading"><span className="spinner" /></div>;
+    return (
+      <div style={{ padding: "8px 0" }}>
+        {[...Array(5)].map((_, i) => (
+          <div key={i} style={{ display: "flex", gap: "12px", padding: "12px 16px", borderBottom: "1px solid var(--border)" }}>
+            <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "var(--subtle)", animation: "pulse 1.5s ease-in-out infinite" }} />
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
+              <div style={{ height: "12px", width: `${60 + i * 7}%`, borderRadius: "4px", background: "var(--subtle)", animation: "pulse 1.5s ease-in-out infinite", animationDelay: `${i * 0.1}s` }} />
+              <div style={{ height: "10px", width: `${40 + i * 5}%`, borderRadius: "4px", background: "var(--subtle)", animation: "pulse 1.5s ease-in-out infinite", animationDelay: `${i * 0.15}s` }} />
+            </div>
+            <div style={{ width: "60px", height: "24px", borderRadius: "4px", background: "var(--subtle)", animation: "pulse 1.5s ease-in-out infinite" }} />
+          </div>
+        ))}
+      </div>
+    );
   }
 
   return (
@@ -49,17 +87,24 @@ export default function DataTable({
       )}
 
       <div className="dt-table-wrap">
-        <table className="dt-table">
+        <table className="dt-table" aria-label="Data table">
           <thead>
             <tr>
               {columns.map(col => (
-                <th key={col.key} style={col.headerStyle}>{col.label}</th>
+                <th key={col.key} onClick={() => handleSort(col.key)} style={{ ...col.headerStyle, cursor: "pointer", userSelect: "none" }}>
+                  <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                    {col.label}
+                    {sortKey === col.key && (
+                      <span style={{ fontSize: "10px", opacity: 0.6 }}>{sortDir === "asc" ? "\u25B2" : "\u25BC"}</span>
+                    )}
+                  </span>
+                </th>
               ))}
               {actions && <th style={{ width: 100, textAlign: "center" }}>Actions</th>}
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 ? (
+            {sorted.length === 0 ? (
               <tr>
                 <td colSpan={colCount}>
                   <div className="dt-empty">

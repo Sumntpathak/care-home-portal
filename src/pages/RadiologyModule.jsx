@@ -48,7 +48,8 @@ export default function RadiologyModule() {
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
   const handleOrder = () => {
-    if (!form.patientName || !form.bodyPart) return;
+    if (!form.patientName.trim()) { addToast("Patient name is required.", "error"); return; }
+    if (!form.bodyPart) { addToast("Select a body part/view.", "error"); return; }
     const order = { id: `RAD-${Date.now().toString(36).toUpperCase().slice(-4)}`, ...form, status: "Ordered", orderedBy: user?.name, orderedAt: new Date().toISOString(), findings: null, impression: null, reportedBy: null };
     setOrders(prev => [order, ...prev]);
     setShowNew(false);

@@ -377,8 +377,9 @@ function AddRoomModal({ onSave, onClose }) {
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const submit = async () => {
-    if (!form.name.trim()) return addToast("Room number/name is required.", "error");
-    if (!form.rate) return addToast("Rate per day is required.", "error");
+    if (!form.name?.trim()) { addToast("Room number is required.", "error"); return; }
+    if (!form.type) { addToast("Select room type.", "error"); return; }
+    if (!form.rate || parseFloat(form.rate) <= 0) { addToast("Daily rate must be greater than zero.", "error"); return; }
     setSaving(true);
     await onSave(form);
     setSaving(false);

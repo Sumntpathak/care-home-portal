@@ -17,7 +17,7 @@ const KNOWLEDGE = {
   overview: {
     keywords: ["what", "about", "platform", "shanti", "features", "do", "help"],
     answer:
-      "Shanti Care is a complete nursing home & OPD management platform with 23 modules, 4 safety engines, and clinical-grade decision support. I can help you navigate any feature. What would you like to know?",
+      "Shanti Care is a complete nursing home & OPD management platform with 28 modules, 6 clinical engines, and clinical-grade decision support. I can help you navigate any feature. What would you like to know?",
   },
 
   pages: {
@@ -393,11 +393,11 @@ const PATH_MAP = {
 // Meta-queries that map to special answers
 const META_QUERIES = {
   "show safety engines": {
-    answer: "Shanti Care has 4 safety engines:\n\n1. Drug Interaction Checker — 5-pass analysis (Rules → CYP450 → Transporters → Opposing Forces → QT Synergy)\n\n2. Diet Engine — 14 conditions, priority-based merge, protein paradox resolution\n\n3. Vitals Analyzer — Age-adjusted, qSOFA sepsis screening, fluid overload detection\n\n4. Handover Engine — ISBAR framework, auto-generated from care data\n\nAsk me about any specific engine for details!",
+    answer: "Shanti Care has 6 clinical engines:\n\n1. Drug Interaction Checker — 5-pass analysis (Rules → CYP450 → Transporters → Opposing Forces → QT Synergy)\n\n2. Diet Engine — 14 conditions, priority-based merge, protein paradox resolution\n\n3. Vitals Analyzer — Age-adjusted, qSOFA sepsis screening, fluid overload detection\n\n4. Handover Engine — ISBAR framework, auto-generated from care data\n\nAsk me about any specific engine for details!",
     suggestions: ["Drug interaction checker", "Diet engine details", "Vitals analyzer", "Handover engine"],
   },
   "what modules exist": {
-    answer: "Shanti Care has 23 modules:\n\n• Dashboard & Reports\n• OPD: Appointments, Prescriptions, Dispensary\n• Care: Home Care, Care Plans, Med Schedule, Dietary\n• Operations: Beds, Visitors, Incidents, Shift Handover\n• Admin: Staff, Billing, Duty Roster\n• Family Portal, Medical Files, Patient Portal\n\nAsk me about any module!",
+    answer: "Shanti Care has 28 modules:\n\n• Dashboard & Reports\n• OPD: Appointments, Prescriptions, Dispensary\n• Care: Home Care, Care Plans, Med Schedule, Dietary\n• Operations: Beds, Visitors, Incidents, Shift Handover\n• Admin: Staff, Billing, Duty Roster\n• Family Portal, Medical Files, Patient Portal\n\nAsk me about any module!",
     suggestions: ["Appointments", "Home Care", "Staff Management", "Billing"],
   },
   "all features": {

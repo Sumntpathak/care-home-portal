@@ -45,7 +45,10 @@ export default function Incidents() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.description) return;
+    if (!form.patientName) { addToast("Select a patient.", "error"); return; }
+    if (!form.type) { addToast("Select incident type.", "error"); return; }
+    if (!form.severity) { addToast("Select severity level.", "error"); return; }
+    if (!form.description?.trim() || form.description.trim().length < 10) { addToast("Description must be at least 10 characters.", "error"); return; }
     setSaving(true);
     try {
       await addIncident(form);

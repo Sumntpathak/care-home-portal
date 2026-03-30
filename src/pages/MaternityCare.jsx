@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useToast } from "../components/Toast";
 import { getPatients, getMaternityFiles, createMaternityFile, addMaternityVisit, addMaternityCareNote, updateMaternityStatus } from "../api/sheets";
 import { Search, Plus, X, Baby, Heart, Calendar, Activity, FileText, AlertTriangle, ChevronDown, ChevronUp, CheckCircle, Clock } from "lucide-react";
 import { printElement } from "../print";
@@ -81,6 +82,7 @@ function MaternityReport({ file }) {
    MAIN COMPONENT
    ════════════════════════════════════════════════════════════════ */
 export default function MaternityCare() {
+  const { addToast } = useToast();
   const [files, setFiles] = useState([]);
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -115,7 +117,8 @@ export default function MaternityCare() {
   /* ── Create file ── */
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (!form.patientName) return;
+    if (!form.patientName?.trim()) { addToast("Patient name is required.", "error"); return; }
+    if (!form.lmp && !form.lmpDate) { addToast("LMP date is required for gestational calculation.", "error"); return; }
     const edd = form.eddDate || calcEDD(form.lmpDate);
     const weeks = calcWeeks(form.lmpDate);
     const trimester = getTrimester(weeks);

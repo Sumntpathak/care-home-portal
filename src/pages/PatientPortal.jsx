@@ -15,11 +15,16 @@ export default function PatientPortal() {
 
   /* Fetch maternity file for this patient */
   const [matFile, setMatFile] = useState(null);
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
     if (user?.name) {
+      setLoading(true);
       getPatientMaternityFile(user.name)
         .then(r => setMatFile(r?.data || null))
-        .catch(() => {});
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
     }
   }, [user?.name]);
 
@@ -33,6 +38,13 @@ export default function PatientPortal() {
     "Dispensed":     { bg:"var(--success-light)",color:"var(--success)" },
     "Completed":     { bg:"var(--success-light)",color:"var(--success)" },
   };
+
+  if (loading) return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh", gap: "16px" }}>
+      <span className="spinner" style={{ width: 32, height: 32 }} />
+      <div style={{ fontSize: 14, color: "var(--text-muted)", fontWeight: 500 }}>Loading your records...</div>
+    </div>
+  );
 
   return (
     <div style={{minHeight:"100vh",background:"var(--subtle)",padding:"0"}}>

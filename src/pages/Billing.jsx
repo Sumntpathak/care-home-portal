@@ -314,6 +314,7 @@ export default function Billing() {
   }, [showInvoiceDropdown]);
 
   const handleGenerateInvoice = async (patient) => {
+    if (!patient) { addToast("Select a patient first.", "error"); return; }
     setInvoiceLoading(true);
     setShowInvoiceDropdown(false);
     try {
