@@ -3,6 +3,7 @@ import { getHomeCarePatients, addHomeCarePatient, getHomeCareNotes, addHomeCareN
 import { Plus, X, BedDouble, Printer, ChevronDown, ChevronUp, LogOut, FileText, Filter, Leaf, Activity, TrendingUp } from "lucide-react";
 import { generateDietPlan } from "../utils/healthAdvisor";
 import { generateVitalsReport, getChartConfig } from "../utils/vitalsEngine";
+import { validateDischargeSummary, checkDischargeReadiness } from "../utils/nabhTemplates";
 import { printElement, DailyCareReport, DischargeFile } from "../print";
 import { usePagination } from "../components/Pagination";
 import { useToast } from "../components/Toast";
@@ -46,6 +47,24 @@ function DischargeModal({ patient, onClose, onDischarged }) {
 
   const handleDischarge = async () => {
     if (!dischargeInfo.dischargeDate) return;
+
+    // NABH discharge validation
+    const nabhResult = validateDischargeSummary({
+      name: patient?.name,
+      admissionDate: patient?.admitDate,
+      dischargeDate: dischargeInfo.dischargeDate || new Date().toISOString().split("T")[0],
+      conditionAtDischarge: dischargeInfo.dischargeReason || "Improved",
+      treatmentGiven: dischargeInfo.dischargeSummary || "",
+      warningSignsSigns: "",
+      primaryDiagnosis: patient?.condition || "",
+      dischargingDoctor: "",
+    });
+
+    if (!nabhResult.valid) {
+      const missingFields = nabhResult.errors.filter(e => e.severity === "error").map(e => e.field).join(", ");
+      addToast(`NABH validation: ${missingFields} required before discharge.`, "warning");
+    }
+
     setSaving(true);
     try {
       await updateHomeCarePatient({
@@ -154,6 +173,25 @@ function DischargeModal({ patient, onClose, onDischarged }) {
             />
           </div>
         </div>
+
+        {/* NABH Completeness Check */}
+        {(() => {
+          const nabhCheck = validateDischargeSummary({
+            name: patient?.name,
+            admissionDate: patient?.admitDate,
+            dischargeDate: dischargeInfo.dischargeDate || new Date().toISOString().split("T")[0],
+            conditionAtDischarge: dischargeInfo.dischargeReason || "Improved",
+            treatmentGiven: dischargeInfo.dischargeSummary || "",
+            warningSignsSigns: "",
+            primaryDiagnosis: patient?.condition || "",
+            dischargingDoctor: "",
+          });
+          return (
+            <div style={{ padding: "10px 14px", background: nabhCheck?.completeness >= 80 ? "var(--success-light, #dcfce7)" : "var(--warning-light, #fef3c7)", borderRadius: 8, fontSize: 12, marginBottom: 10, marginTop: 16 }}>
+              <strong>NABH Completeness:</strong> {nabhCheck?.completeness || 0}% — {nabhCheck?.valid ? "Ready for discharge" : `${nabhCheck?.errors?.filter(e => e.severity === "error").length || 0} mandatory fields missing`}
+            </div>
+          );
+        })()}
 
         <div style={{display:"flex",gap:"8px",marginTop:"16px",flexWrap:"wrap"}}>
           <button

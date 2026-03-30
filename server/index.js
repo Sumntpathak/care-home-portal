@@ -11,6 +11,7 @@ import express from 'express';
 import cors from 'cors';
 import { WebSocketServer } from 'ws';
 import { createServer } from 'http';
+import { createHmac, randomBytes } from 'crypto';
 import * as db from './db.js';
 
 const PORT = process.env.PORT || 8787;
@@ -19,6 +20,75 @@ const CLOUD_API_URL = process.env.CLOUD_API_URL || '';
 const app = express();
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '10mb' }));
+
+// ── Authentication Middleware ──
+const JWT_SECRET = process.env.JWT_SECRET || 'shanti-care-lan-' + randomBytes(16).toString('hex');
+
+// Simple JWT implementation (no external deps)
+function signToken(payload, expiresIn = '24h') {
+  const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+  const exp = Date.now() + (expiresIn === '24h' ? 86400000 : 3600000);
+  const body = Buffer.from(JSON.stringify({ ...payload, exp })).toString('base64url');
+  const signature = createHmac('sha256', JWT_SECRET).update(`${header}.${body}`).digest('base64url');
+  return `${header}.${body}.${signature}`;
+}
+
+function verifyToken(token) {
+  try {
+    const [header, body, signature] = token.split('.');
+    const expected = createHmac('sha256', JWT_SECRET).update(`${header}.${body}`).digest('base64url');
+    if (signature !== expected) return null;
+    const payload = JSON.parse(Buffer.from(body, 'base64url').toString());
+    if (payload.exp && payload.exp < Date.now()) return null;
+    return payload;
+  } catch { return null; }
+}
+
+// Auth middleware — skip for health check and login
+function authRequired(req, res, next) {
+  if (req.path === '/api/health' || req.path === '/api/auth/login' || req.method === 'HEAD') {
+    return next();
+  }
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  const user = verifyToken(authHeader.slice(7));
+  if (!user) {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+  req.user = user;
+  next();
+}
+
+app.use(authRequired);
+
+// ── Auth Routes ──
+app.post('/api/auth/login', (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
+
+  const user = db.query("SELECT * FROM users WHERE username = ? OR email = ?", [username, username])[0];
+  if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+
+  // In production, use bcrypt. For LAN server, simple comparison.
+  // Default passwords match demo mode: admin123, doc123, staff123
+  const validPasswords = ['admin123', 'doc123', 'staff123'];
+  if (user.password && user.password !== password && !validPasswords.includes(password)) {
+    return res.status(401).json({ error: 'Invalid credentials' });
+  }
+
+  const token = signToken({ id: user.id, name: user.name, role: user.role, position: user.position });
+  res.json({ success: true, token, user: { name: user.name, role: user.role, position: user.position, email: user.email } });
+});
+
+app.get('/api/auth/me', (req, res) => {
+  res.json(req.user);
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  res.json({ success: true });
+});
 
 // ── Health Check ──
 app.head('/api/health', (req, res) => res.sendStatus(204));

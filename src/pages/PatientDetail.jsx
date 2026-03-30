@@ -2,14 +2,17 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getPatients, getHomeCareNotes, getCarePlan, getPrescriptions, getAppointments } from "../api/sheets";
 import { formatDateShort } from "../utils/dateUtils";
+import { toFhirBundle, downloadFhirBundle } from "../utils/fhirExport";
+import { useToast } from "../components/Toast";
 import {
   ArrowLeft, User, Phone, MapPin, Heart, Calendar,
-  Activity, FileText, Pill, ClipboardList, AlertTriangle, ChevronRight, FolderOpen
+  Activity, FileText, Pill, ClipboardList, AlertTriangle, ChevronRight, FolderOpen, Download
 } from "lucide-react";
 
 export default function PatientDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { addToast } = useToast();
   const [tab, setTab] = useState("overview");
   const [patient, setPatient] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -72,6 +75,19 @@ export default function PatientDetail() {
           </div>
         </div>
         <div style={{ display: "flex", gap: "8px" }}>
+          <button className="btn btn-outline btn-sm" onClick={() => {
+            const bundle = toFhirBundle(
+              { ...patient, abhaId: patient.abhaId || "" },
+              appointments || [],
+              prescriptions || [],
+              [],
+              []
+            );
+            downloadFhirBundle(bundle, `fhir-${patient.name?.replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.json`);
+            addToast("FHIR R4 bundle exported.", "success");
+          }}>
+            <Download size={14} /> Export FHIR
+          </button>
           <button className="btn btn-outline btn-sm" onClick={() => navigate("/medical-file")}>
             <FolderOpen size={14} /> Medical File
           </button>

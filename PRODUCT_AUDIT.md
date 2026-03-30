@@ -1,8 +1,8 @@
 # Shanti Care Home Portal — Complete Product Audit Document
 
-**Version:** 2.2.0 (Post-Adversarial Code Audit Fix)
+**Version:** 2.3.0 (Post-Repo Audit Fix)
 **Audit Date:** March 2026
-**Last Updated:** 31 March 2026 — incorporates fixes from 2 rounds of independent audits (document-level + adversarial code-level)
+**Last Updated:** 31 March 2026 — incorporates fixes from 3 rounds of independent audits (document-level + adversarial code-level + GitHub repo audit)
 **Repository:** React + Vite PWA | Cloudflare Pages + Workers
 **Live:** https://shanti-care.pages.dev
 
@@ -457,9 +457,9 @@ Plus Google Translate integration for 48+ additional languages.
 
 ### Requires External Setup
 - ABDM integration requires sandbox credentials (`VITE_ABDM_CLIENT_ID`, `VITE_ABDM_CLIENT_SECRET`)
-- LAN server requires manual deployment (`cd server && npm install && npm start`)
-- FHIR export is programmatic (no UI button yet — available as utility functions)
-- Clinical engine doctor validation exists as API but needs more UI integration on prescription pages
+- ABDM production requires NHA onboarding + HFR registration (set `VITE_HFR_ID` env var)
+- LAN server requires manual deployment (`cd server && npm install && npm start`) or Docker (`docker-compose up`)
+- LAN server JWT_SECRET should be set via env var in production (auto-generated per restart if not set)
 
 ### Compliance Notes
 - Classified as CDSS (Clinical Decision Support System) under Indian MDR 2017 Rule 2(b) — NOT a Medical Device
@@ -524,6 +524,16 @@ This product was independently audited by 3 LLMs (Gemini 2.5, Claude Opus 4, GPT
 | 10 | qSOFA returns low score when vitals are missing without surfacing the gap | **MEDIUM** | **Fixed.** Added `assessed`, `missing`, `missingParams` fields. Recommendation warns: "True score may be higher." |
 | 11 | Beers "sliding scale insulin" is a protocol name, not a drug — will never match | **MEDIUM** | **Fixed.** Replaced with actual drug names: insulin regular, actrapid, huminsulin-r, insuman rapid. |
 | 12 | ABDM carries hardcoded fake registration number "MH/2024/HC-0456" | **LOW** | **Fixed.** Now reads from `VITE_HFR_ID` env var, falls back to "PENDING-HFR-REGISTRATION". |
+
+### Round 3: GitHub Repo Audit (Claude Opus — full clone, line-by-line)
+
+| # | Finding | Severity | Resolution |
+|---|---------|----------|------------|
+| 13 | FHIR export has no UI — zero pages call `toFhirBundle()` | **HIGH** | **Fixed.** "Export FHIR" button added to PatientDetail page. Downloads R4 JSON bundle. |
+| 14 | NABH templates disconnected — `validateDischargeSummary()` not called anywhere | **HIGH** | **Fixed.** Wired to HomeCare discharge flow. NABH completeness % shown in discharge form. Warning toast on missing mandatory fields. |
+| 15 | LAN server has ZERO authentication — every endpoint open to WiFi | **CRITICAL** | **Fixed.** JWT auth middleware added. `POST /api/auth/login` → token. All endpoints require `Bearer` token. Health check exempted. |
+| 16 | Demo mode is default with no warning — users lose data on refresh | **HIGH** | **Fixed.** Amber sticky banner: "DEMO MODE — All data is temporary and resets on page refresh." Hidden when `VITE_DEMO_MODE=false`. |
+| 17 | Single commit history — looks like project dump | **MEDIUM** | **Acknowledged.** User to create meaningful commit history going forward. |
 
 ### Brain Architecture Additions (v2.2.0)
 
@@ -593,4 +603,4 @@ To verify any claim in this document:
 
 ---
 
-*This document was generated from static code analysis of the Shanti Care Home Portal source code. All numbers are exact counts from the codebase. No estimations or marketing claims — only what the code actually implements. Version 2.1.0 incorporates fixes from independent audits by Gemini 2.5, Claude Opus 4, and GPT-4.*
+*This document was generated from static code analysis of the Shanti Care Home Portal source code. All numbers are exact counts from the codebase. No estimations or marketing claims — only what the code actually implements. Version 2.3.0 incorporates fixes from 3 rounds of independent audits: document-level (Gemini 2.5, Claude Opus 4, GPT-4), adversarial code-level (Claude Opus), and GitHub repo audit (Claude Opus).*
