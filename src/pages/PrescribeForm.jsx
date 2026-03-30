@@ -91,6 +91,27 @@ export default function PrescribeForm() {
     return result;
   }, [meds, diagnosis, patient]);
 
+  /* ── Drug simulation: predict impact of adding each new med ── */
+  const [simResult, setSimResult] = useState(null);
+
+  useEffect(() => {
+    const lastMed = meds[meds.length - 1];
+    if (!lastMed?.name?.trim() || meds.filter(m => m.name.trim()).length < 1) {
+      setSimResult(null);
+      return;
+    }
+    // Lazy load simulation
+    import("../utils/clinicalPipeline").then(({ simulateAddDrug }) => {
+      const patientData = {
+        age: patient?.age || 70,
+        conditions: [diagnosis, patient?.condition].filter(Boolean),
+        medications: meds.slice(0, -1).filter(m => m.name.trim()).map(m => ({ name: m.name })),
+      };
+      const result = simulateAddDrug(patientData, {}, lastMed.name.trim());
+      if (result && !result.error) setSimResult(result);
+    }).catch(() => {});
+  }, [meds, diagnosis, patient]);
+
   /* ── FDA/RxNorm enhanced check (async, runs after local) ── */
   const [fdaResult, setFdaResult] = useState(null);
   const [fdaLoading, setFdaLoading] = useState(false);
@@ -526,6 +547,23 @@ export default function PrescribeForm() {
                   </span>
                 </div>
                 <div style={{color:"var(--text-secondary)"}}>{dup.note}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Drug Simulation Preview */}
+        {simResult && !simResult.isSafe && (
+          <div style={{ margin: "10px 0", padding: "12px 14px", borderRadius: 10, background: simResult.predictions.some(p => p.severity === "critical") ? "var(--danger-light)" : "var(--warning-light)", border: `1px solid ${simResult.predictions.some(p => p.severity === "critical") ? "rgba(212,104,90,.3)" : "rgba(212,149,106,.3)"}` }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6, fontWeight: 700, fontSize: 13, color: simResult.predictions.some(p => p.severity === "critical") ? "var(--danger)" : "var(--warning)" }}>
+              <AlertTriangle size={14} /> Simulation: Adding {meds[meds.length - 1]?.name}
+            </div>
+            <div style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.7 }}>
+              {simResult.overallVerdict}
+            </div>
+            {simResult.predictions.map((p, i) => (
+              <div key={i} style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4, paddingLeft: 8, borderLeft: `2px solid ${p.severity === "critical" ? "var(--danger)" : "var(--warning)"}` }}>
+                {p.message}
               </div>
             ))}
           </div>

@@ -210,6 +210,22 @@ export default function ClinicalAudit() {
                         </div>
                       </div>
 
+                        {entry.output?.suppressedAlerts > 0 && (
+                          <div style={{ marginTop: 8, padding: "8px 12px", background: "var(--info-light)", borderRadius: 6, fontSize: 11, color: "var(--info)" }}>
+                            <strong>Causal Reasoning:</strong> {entry.output.suppressedAlerts} alert(s) were suppressed because they were identified as secondary effects of a primary finding. This reduces alert fatigue while preserving the root cause.
+                          </div>
+                        )}
+                        {entry.output?.causalReasoning > 0 && (
+                          <div style={{ marginTop: 4, padding: "8px 12px", background: "var(--purple-light)", borderRadius: 6, fontSize: 11, color: "var(--purple)" }}>
+                            <strong>Fusion Analysis:</strong> {entry.output.causalReasoning} causal chain(s) detected. {entry.output.drugVitalFusions > 0 ? `${entry.output.drugVitalFusions} drug-vital correlation(s) found.` : ""}
+                          </div>
+                        )}
+                        {entry.output?.confidenceLabel && (
+                          <div style={{ marginTop: 4, padding: "8px 12px", background: "var(--subtle)", borderRadius: 6, fontSize: 11, color: "var(--text-secondary)" }}>
+                            <strong>Confidence:</strong> {entry.output.confidenceLabel} ({Math.round((entry.output.confidence || 0) * 100)}%) — {entry.output.confidenceExplanation || ""}
+                          </div>
+                        )}
+
                       {!entry.feedback && (isDoctor || isAdmin) && (
                         <div>
                           <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", marginBottom: 8 }}>Doctor Validation</div>

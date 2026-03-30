@@ -577,6 +577,155 @@ function analyzeTemporalTrends(vitals, history = []) {
 }
 
 // ═══════════════════════════════════════════════════════
+//  SIMULATION ENGINE — "What If" Predictive Analysis
+//  Predicts clinical impact BEFORE a change is made.
+// ═══════════════════════════════════════════════════════
+
+/**
+ * Simulate adding a new drug to a patient's medication list.
+ * Returns predicted interactions, risk changes, and recommendations
+ * WITHOUT actually modifying the patient record.
+ *
+ * @param {Object} patient - Current patient record with medications[]
+ * @param {Object} vitals - Current vitals
+ * @param {string} newDrugName - Drug to simulate adding
+ * @param {Object} options - { dose, frequency }
+ * @returns {Object} Simulation result with predicted impact
+ */
+export function simulateAddDrug(patient = {}, vitals = {}, newDrugName = "", options = {}) {
+  if (!newDrugName.trim()) return { error: "Drug name required" };
+
+  const currentMeds = patient.medications || [];
+  const simulatedMeds = [...currentMeds, { name: newDrugName, dose: options.dose || "", frequency: options.frequency || "" }];
+
+  // Create simulated patient with new drug
+  const simulatedPatient = { ...patient, medications: simulatedMeds };
+
+  // Run pipeline on CURRENT state
+  const currentResult = runClinicalPipeline(patient, vitals, { includeRiskScores: true });
+
+  // Run pipeline on SIMULATED state
+  const simulatedResult = runClinicalPipeline(simulatedPatient, vitals, { includeRiskScores: true });
+
+  // Compare: what's NEW in simulated that wasn't in current?
+  const currentAlertMessages = new Set(currentResult.alerts.map(a => a.message));
+  const newAlerts = simulatedResult.alerts.filter(a => !currentAlertMessages.has(a.message));
+
+  // Check for drug-vital fusion alerts specific to the new drug
+  const drugFusions = newAlerts.filter(a => a.type === "drug-vital-fusion");
+
+  // Check for Beers criteria triggered by new drug
+  const beersAlerts = simulatedResult.riskScores?.overmedication?.indicators?.filter(i =>
+    i.beersClass && i.detail?.toLowerCase().includes(newDrugName.toLowerCase())
+  ) || [];
+
+  // Risk level change
+  const riskEscalated = simulatedResult.overallSeverity !== currentResult.overallSeverity;
+  const severityOrder = { normal: 0, info: 1, warning: 2, critical: 3 };
+  const riskDelta = (severityOrder[simulatedResult.overallSeverity] || 0) - (severityOrder[currentResult.overallSeverity] || 0);
+
+  // Build prediction
+  const predictions = [];
+
+  if (newAlerts.length > 0) {
+    predictions.push({
+      type: "new-alerts",
+      severity: newAlerts.some(a => a.severity === "critical") ? "critical" : "warning",
+      message: `Adding ${newDrugName} would trigger ${newAlerts.length} new alert(s).`,
+      details: newAlerts.map(a => ({ severity: a.severity, message: a.message, source: a.source })),
+    });
+  }
+
+  if (drugFusions.length > 0) {
+    predictions.push({
+      type: "drug-vital-conflict",
+      severity: "critical",
+      message: `${newDrugName} may interact with current vital signs: ${drugFusions.map(f => f.linkedVital).join(", ")}`,
+      details: drugFusions,
+    });
+  }
+
+  if (beersAlerts.length > 0) {
+    predictions.push({
+      type: "beers-criteria",
+      severity: "critical",
+      message: `${newDrugName} is flagged as potentially inappropriate for elderly patients (AGS Beers 2023).`,
+      details: beersAlerts,
+    });
+  }
+
+  // Polypharmacy check
+  if (simulatedMeds.length >= 5 && currentMeds.length < 5) {
+    predictions.push({
+      type: "polypharmacy-threshold",
+      severity: "warning",
+      message: `Adding ${newDrugName} would bring total to ${simulatedMeds.length} medications — polypharmacy threshold crossed (≥5). Fall risk increases.`,
+    });
+  } else if (simulatedMeds.length >= 10 && currentMeds.length < 10) {
+    predictions.push({
+      type: "severe-polypharmacy",
+      severity: "critical",
+      message: `Adding ${newDrugName} would bring total to ${simulatedMeds.length} medications — severe polypharmacy (≥10). Comprehensive medication review strongly recommended.`,
+    });
+  }
+
+  const isSafe = predictions.length === 0;
+  const highestSeverity = predictions.reduce((max, p) => {
+    const order = { info: 0, warning: 1, critical: 2 };
+    return (order[p.severity] || 0) > (order[max] || 0) ? p.severity : max;
+  }, "info");
+
+  return {
+    drugName: newDrugName,
+    isSafe,
+    predictions,
+    riskEscalated,
+    riskDelta,
+    overallVerdict: isSafe
+      ? `${newDrugName} can be safely added based on current clinical state. No new interactions or risk escalations predicted.`
+      : `Adding ${newDrugName} would introduce ${predictions.length} concern(s). ${highestSeverity === "critical" ? "CRITICAL: Doctor review required before prescribing." : "Review predicted impacts before proceeding."}`,
+    currentAlertCount: currentResult.alerts.length,
+    simulatedAlertCount: simulatedResult.alerts.length,
+    newAlertCount: newAlerts.length,
+    simulatedOverallSeverity: simulatedResult.overallSeverity,
+    disclaimer: "Simulation based on deterministic rule engines. Does not replace clinical judgment. Verify with pharmacist for complex cases.",
+  };
+}
+
+/**
+ * Simulate a vitals change — "What if BP drops to 85?"
+ * Predicts what risk scores and alerts would trigger.
+ */
+export function simulateVitalsChange(patient = {}, currentVitals = {}, changedVitals = {}, history = []) {
+  const mergedVitals = { ...currentVitals, ...changedVitals };
+
+  const currentResult = runClinicalPipeline(patient, currentVitals, {}, history);
+  const simulatedResult = runClinicalPipeline(patient, mergedVitals, {}, history);
+
+  const currentAlertMessages = new Set(currentResult.alerts.map(a => a.message));
+  const newAlerts = simulatedResult.alerts.filter(a => !currentAlertMessages.has(a.message));
+  const resolvedAlerts = currentResult.alerts.filter(a => !simulatedResult.alerts.some(s => s.message === a.message));
+
+  // NEWS2 score change
+  const news2Current = currentResult.riskScores?.news2?.score || 0;
+  const news2Simulated = simulatedResult.riskScores?.news2?.score || 0;
+  const news2Delta = news2Simulated - news2Current;
+
+  return {
+    changedParams: Object.keys(changedVitals),
+    newAlerts,
+    resolvedAlerts,
+    news2Current,
+    news2Simulated,
+    news2Delta,
+    overallChange: simulatedResult.overallSeverity !== currentResult.overallSeverity
+      ? `Severity would change: ${currentResult.overallSeverity} → ${simulatedResult.overallSeverity}`
+      : "No overall severity change predicted.",
+    simulatedSummary: generateClinicalSummary(simulatedResult),
+  };
+}
+
+// ═══════════════════════════════════════════════════════
 //  LAYER 1: CLINICAL DECISION PIPELINE
 // ═══════════════════════════════════════════════════════
 
@@ -761,7 +910,23 @@ export function runClinicalPipeline(patient = {}, vitals = {}, options = {}, his
 
   const overallSeverity = hasCritical ? "critical" : hasWarning ? "warning" : "normal";
   const overallAction = hasCritical ? "immediate-review" : hasWarning ? "monitor-closely" : "routine";
-  const confidence = Math.min(1, 0.7 + (Object.keys(vitals).filter(k => vitals[k] != null).length * 0.05));
+  // ── Enhanced Confidence Scoring ──
+  const vitalCount = Object.keys(vitals).filter(k => vitals[k] != null).length;
+  const hasHistory = history.length >= 3;
+  const hasMedList = (patient.medications || []).length > 0;
+  const hasConditions = (patient.conditions || []).length > 0;
+  const hasLabValues = !!(patient.labs?.creatinine || patient.labs?.hba1c);
+
+  let confidence = 0.3; // Base: just having some data
+  confidence += vitalCount * 0.07; // Each vital adds 7% (max 56% for 8 vitals)
+  confidence += hasHistory ? 0.1 : 0; // Trend data adds 10%
+  confidence += hasMedList ? 0.05 : 0; // Medication list adds 5%
+  confidence += hasConditions ? 0.05 : 0; // Condition list adds 5%
+  confidence += hasLabValues ? 0.05 : 0; // Lab values add 5%
+  confidence = Math.min(1, Math.round(confidence * 100) / 100);
+
+  const confidenceLabel = confidence >= 0.85 ? "High" : confidence >= 0.6 ? "Moderate" : confidence >= 0.4 ? "Low" : "Very Low";
+  const confidenceExplanation = `Confidence ${confidenceLabel} (${Math.round(confidence * 100)}%): Based on ${vitalCount} vital(s)${hasHistory ? " + trend data" : ""}${hasMedList ? " + medication list" : ""}${hasLabValues ? " + lab values" : ""}. ${confidence < 0.6 ? "Provide more clinical data for higher confidence." : ""}`;
 
   // ── Audit Log ──
   const auditId = logEngineCall("clinicalPipeline", {
@@ -784,6 +949,8 @@ export function runClinicalPipeline(patient = {}, vitals = {}, options = {}, his
     overallSeverity,
     overallAction,
     confidence,
+    confidenceLabel,
+    confidenceExplanation,
     alerts: alerts.sort((a, b) => (a.severity === "critical" ? 0 : 1) - (b.severity === "critical" ? 0 : 1)),
     riskScores,
     explanations,
