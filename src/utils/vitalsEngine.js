@@ -164,7 +164,7 @@ function classifyTemperature(value) {
  * @returns {"normal"|"caution"|"critical"}
  */
 function classifySystolic(value) {
-  if (value > 180 || value < 80) return "critical";
+  if (value >= 180 || value < 80) return "critical";
   if (value >= 130 || value < 90) return "caution";
   if (value >= 120) return "caution"; // elevated
   return "normal";

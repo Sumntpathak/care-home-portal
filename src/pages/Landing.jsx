@@ -691,7 +691,7 @@ function LiveTestCards() {
     { id: "TC-086", group: "Vitals", name: "qSOFA: all 3 criteria met", expected: "Score 3, HIGH risk", engine: "vitals", run: () => { const { calculateQSOFA } = window.__clinicalPipeline || {}; if (!calculateQSOFA) return "Loading..."; const r = calculateQSOFA({systolic:95,respiratoryRate:24,gcs:14}); return `Score: ${r.score}/3 — ${r.risk}`; }, pass: (r) => r?.includes("3") && r?.toLowerCase()?.includes("high") },
     { id: "TC-109", group: "Vitals", name: "NEWS2: all normal vitals", expected: "Score 0, LOW risk", engine: "vitals", run: () => { const { calculateNEWS2 } = window.__clinicalPipeline || {}; if (!calculateNEWS2) return "Loading..."; const r = calculateNEWS2({respiratoryRate:16,spo2:98,systolic:125,pulse:75,temperature:98.6,consciousness:"A"}); return `Score: ${r.score}/20 — ${r.risk}`; }, pass: (r) => r?.includes("0") && r?.toLowerCase()?.includes("low") },
     { id: "TC-112", group: "Vitals", name: "Glucose 53 → Critical Hypoglycemia", expected: "Critical classification", engine: "vitals", run: () => { const cls = _classifyGlucose ? _classifyGlucose(53) : "Loading..."; return cls; }, pass: (r) => r?.toLowerCase()?.includes("critical") || r?.toLowerCase()?.includes("hypo") },
-    { id: "TC-121", group: "Vitals", name: "Systolic 180 → Hypertensive Crisis", expected: "Crisis classification", engine: "vitals", run: () => { const cls = _classifySystolic ? _classifySystolic(180) : "Loading..."; return cls; }, pass: (r) => r?.toLowerCase()?.includes("crisis") },
+    { id: "TC-121", group: "Vitals", name: "Systolic 180 → Hypertensive Crisis", expected: "Critical classification", engine: "vitals", run: () => { const cls = _classifySystolic ? _classifySystolic(180) : "Loading..."; return cls; }, pass: (r) => r?.toLowerCase()?.includes("critical") || r?.toLowerCase()?.includes("crisis") },
 
     // Simulation
     { id: "TC-151", group: "Simulation", name: "Simulate: Add Aspirin to Warfarin patient", expected: "isSafe: false, CRITICAL", engine: "sim", run: () => { const { simulateAddDrug } = window.__clinicalPipeline || {}; if (!simulateAddDrug) return "Loading..."; const r = simulateAddDrug({medications:[{name:"warfarin"}]},{}, "aspirin"); return r.isSafe ? "Safe (ERROR)" : `Unsafe — ${r.predictions?.length || 0} concern(s)`; }, pass: (r) => r?.includes("Unsafe") },
@@ -729,7 +729,7 @@ function LiveTestCards() {
         let runFn = tc.run;
 
         // Override run() for tests that need loaded modules
-        if (tc.id === "TC-086") runFn = () => { const r = pipeline.calculateQSOFA?.({systolic:95,respiratoryRate:24,gcs:14}); return r ? `Score: ${r.score}/3 — ${r.risk}` : "Engine not loaded"; };
+        if (tc.id === "TC-086") runFn = () => { const r = vitalsEng.calculateQSOFA?.({systolic:95,respiratoryRate:24,gcs:14}); return r ? `Score: ${r.score}/3 — ${r.risk}` : "Engine not loaded"; };
         if (tc.id === "TC-109") runFn = () => { const r = pipeline.calculateNEWS2?.({respiratoryRate:16,spo2:98,systolic:125,pulse:75,temperature:98.6,consciousness:"A"}); return r ? `Score: ${r.score}/20 — ${r.risk}` : "Engine not loaded"; };
         if (tc.id === "TC-112") runFn = () => { const cls = vitalsEng.classifyGlucose?.(53); return cls || "Engine not loaded"; };
         if (tc.id === "TC-121") runFn = () => { const cls = vitalsEng.classifySystolic?.(180); return cls || "Engine not loaded"; };
