@@ -1150,7 +1150,7 @@ export default function Landing() {
               onMouseLeave={e => e.target.style.color = "rgba(255,255,255,0.6)"}
             >{l}</span>
           ))}
-          <button onClick={() => navigate("/login")} style={{
+          <button onClick={() => navigate("/register")} style={{
             padding: "8px 20px", borderRadius: 8, border: "none",
             background: "#3b82f6", color: "#fff", fontSize: 14, fontWeight: 600,
             cursor: "pointer", fontFamily: "'Inter',sans-serif",
