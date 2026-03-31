@@ -8,20 +8,28 @@ import { Stethoscope, Users, FileText, Shield, BarChart3, ArrowRight, Check, Pla
 
 const STEPS = [
   {
-    icon: Users, title: "View Sample Patients", desc: "12 realistic patients with conditions like Diabetes, CKD, Heart Failure, Parkinson's, COPD. Full medical histories, allergies, and current medications.",
+    icon: Users, title: "Add Your Own Patients", desc: "Add real or test patients with conditions, allergies, and demographics. Or use 12 pre-loaded sample patients (Diabetes, CKD, Heart Failure, Parkinson's, COPD).",
     path: "/patients", color: "#3b82f6", bg: "#eff6ff",
   },
   {
-    icon: FileText, title: "Write a Prescription", desc: "Pick any patient, write a prescription. As you type drug names, the 5-pass interaction engine runs in real-time. Try: Warfarin + Aspirin.",
+    icon: ClipboardList, title: "Book OPD Appointments", desc: "Create appointments for your patients — just like a real OPD. Choose consultation type, set fees, assign to yourself as the doctor.",
+    path: "/appointments", color: "#f59e0b", bg: "#fffbeb",
+  },
+  {
+    icon: FileText, title: "Write Prescriptions", desc: "Prescribe medicines with autocomplete from inventory. The 5-pass drug interaction engine fires in real-time. Try: Warfarin + Aspirin.",
     path: "/doctor-appointments", color: "#8b5cf6", bg: "#f5f3ff",
   },
   {
-    icon: Pill, title: "Test Drug Interactions", desc: "The engine checks CYP450 metabolism, P-glycoprotein transport, QT prolongation, opposing forces, and 40+ FDA rules — all in milliseconds.",
-    path: "/doctor-appointments", color: "#dc2626", bg: "#fef2f2",
+    icon: Pill, title: "Manage Medications & Dispensary", desc: "Track medicine stock, dispense prescriptions, manage medication rounds. The engine checks for double-dose and Beers criteria in elderly.",
+    path: "/medicines", color: "#dc2626", bg: "#fef2f2",
   },
   {
-    icon: Shield, title: "Review Engine Accuracy", desc: "See what the engine flagged. Mark alerts as Valid, Override, or False Positive. Your feedback directly trains the next version.",
-    path: "/clinical-audit", color: "#10b981", bg: "#ecfdf5",
+    icon: Activity, title: "Record Vitals & Care Notes", desc: "Document daily vitals (BP, sugar, SpO₂, pulse, temp). The engine auto-detects sepsis triad, fluid overload, and cross-vital patterns.",
+    path: "/home-care", color: "#10b981", bg: "#ecfdf5",
+  },
+  {
+    icon: Shield, title: "Review Engine Accuracy", desc: "See every alert the engine flagged. Mark as Valid, Override, or False Positive. Your feedback is the clinical validation evidence.",
+    path: "/clinical-audit", color: "#ec4899", bg: "#fdf2f8",
   },
 ];
 

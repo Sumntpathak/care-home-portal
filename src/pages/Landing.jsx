@@ -1174,7 +1174,7 @@ export default function Landing() {
           {["Features", "Demo", "Pricing", "Contact"].map(l => (
             <span key={l} onClick={() => scrollTo(l.toLowerCase())} style={{ color: "#fff", fontSize: 28, fontWeight: 600, cursor: "pointer", letterSpacing: "-0.02em" }}>{l}</span>
           ))}
-          <button onClick={() => { setMobileMenu(false); navigate("/login"); }} style={{
+          <button onClick={() => { setMobileMenu(false); navigate("/register"); }} style={{
             padding: "16px 48px", borderRadius: 8, border: "none", background: "#3b82f6",
             color: "#fff", fontSize: 18, fontWeight: 600, cursor: "pointer", fontFamily: "'Inter',sans-serif",
           }}>Get Started</button>
@@ -1226,7 +1226,7 @@ export default function Landing() {
             >
               Watch 192 Tests Run Live <ArrowRight size={18} />
             </button>
-            <button onClick={() => navigate("/login")} style={{
+            <button onClick={() => { try { localStorage.removeItem("ch_user"); } catch {} navigate("/login"); }} style={{
               padding: "16px 32px", borderRadius: 8,
               border: "1px solid rgba(255,255,255,0.2)", background: "transparent",
               color: "#fff", fontSize: 15, fontWeight: 500,
@@ -2239,7 +2239,7 @@ export default function Landing() {
                   </div>
                   <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 24, lineHeight: 1.5 }}>{p.subtitle}</div>
 
-                  <button onClick={() => navigate("/login")} style={{
+                  <button onClick={() => navigate("/register")} style={{
                     width: "100%", padding: "12px 0", borderRadius: 8, border: "none",
                     background: p.highlight ? "#3b82f6" : "#111",
                     color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer",
@@ -2295,7 +2295,7 @@ export default function Landing() {
               We're onboarding early adopters. Try the demo, test the safety engines, and help us build the standard for Indian healthcare.
             </p>
 
-            <button onClick={() => navigate("/login")} style={{
+            <button onClick={() => navigate("/register")} style={{
               padding: "18px 48px", borderRadius: 8, border: "none",
               background: "#fff", color: "#000", fontSize: 17, fontWeight: 700,
               cursor: "pointer", fontFamily: "'Inter',sans-serif",

@@ -36,7 +36,8 @@
     "lab": "Laboratory",
     "radiology": "Radiology",
     "clinicalAudit": "Clinical Audit",
-    "doctorTesting": "Testing Dashboard"
+    "doctorTesting": "Testing Dashboard",
+    "diagnostics": "Diagnostics & Pharmacy"
   },
   "common": {
     "search": "Search",

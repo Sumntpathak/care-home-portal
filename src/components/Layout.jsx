@@ -64,6 +64,7 @@ const NAV_SECTIONS = {
     { section: "nav.clinical", id: "clinical", items: [
       { to: "/", icon: <LayoutDashboard size={I}/>, labelKey: "nav.dashboard" },
       { to: "/doctor-appointments", icon: <Stethoscope size={I}/>, labelKey: "nav.doctorQueue" },
+      { to: "/appointments", icon: <CalendarDays size={I}/>, labelKey: "nav.appointments" },
       { to: "/prescriptions", icon: <ClipboardList size={I}/>, labelKey: "nav.prescriptions" },
       { to: "/patients", icon: <UserCircle size={I}/>, labelKey: "nav.patients" },
       { to: "/medical-file", icon: <FolderOpen size={I}/>, labelKey: "nav.medicalFile" },
@@ -71,9 +72,18 @@ const NAV_SECTIONS = {
       { to: "/doctor-testing", icon: <BarChart3 size={I}/>, labelKey: "nav.doctorTesting" },
     ]},
     { section: "nav.patientCare", id: "care", items: [
+      { to: "/home-care", icon: <BedDouble size={I}/>, labelKey: "nav.homeCare" },
       { to: "/care-plans", icon: <FileText size={I}/>, labelKey: "nav.carePlans" },
       { to: "/med-schedule", icon: <Pill size={I}/>, labelKey: "nav.medSchedule" },
+      { to: "/dietary", icon: <UtensilsCrossed size={I}/>, labelKey: "nav.dietary" },
+      { to: "/maternity", icon: <Baby size={I}/>, labelKey: "nav.maternity" },
       { to: "/incidents", icon: <AlertTriangle size={I}/>, labelKey: "nav.incidents" },
+    ]},
+    { section: "nav.diagnostics", id: "diag", items: [
+      { to: "/lab", icon: <FlaskConical size={I}/>, labelKey: "nav.lab" },
+      { to: "/radiology", icon: <Image size={I}/>, labelKey: "nav.radiology" },
+      { to: "/medicines", icon: <Pill size={I}/>, labelKey: "nav.medicines" },
+      { to: "/dispensary", icon: <Pill size={I}/>, labelKey: "nav.dispensary" },
     ]},
   ],
   "Staff:Appointment Desk": [
