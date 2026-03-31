@@ -2661,4 +2661,55 @@ input:focus, select:focus, textarea:focus {
   .modal-overlay { padding: 12px; padding-top: 12px; }
   .modal-content { border-radius: 12px; max-height: calc(100vh - 24px); }
   .modal-header, .modal-body, .modal-footer { padding-left: 16px; padding-right: 16px; }
+
+  /* Safe area insets for notch devices */
+  .app { padding-bottom: env(safe-area-inset-bottom, 0); }
+  .sb { padding-top: env(safe-area-inset-top, 0); }
+
+  /* Minimum 44px touch targets */
+  .btn, .tab-btn, .btn-icon, .quick-action-btn { min-height: 44px; }
+  .btn-sm { min-height: 36px; }
+
+  /* Bottom nav spacing */
+  .main-content { padding-bottom: 72px; }
+}
+
+/* ── PWA: Bottom Navigation (Mobile) ── */
+.bottom-nav {
+  display: none;
+}
+@media (max-width: 768px) {
+  .bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 4px 0 calc(4px + env(safe-area-inset-bottom, 0));
+    z-index: 900;
+    justify-content: space-around;
+    align-items: center;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 10px;
+    font-weight: 500;
+    transition: color .15s;
+    min-width: 56px;
+  }
+  .bottom-nav-item.active {
+    color: var(--primary);
+  }
+  .bottom-nav-item svg { flex-shrink: 0; }
 }

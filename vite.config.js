@@ -18,6 +18,27 @@ export default defineConfig({
         start_url: '/',
         scope: '/',
         categories: ['medical', 'health'],
+        orientation: 'any',
+        shortcuts: [
+          {
+            name: 'New Prescription',
+            short_name: 'Prescribe',
+            url: '/#/doctor-appointments',
+            icons: [{ src: '/icons/icon-96.png', sizes: '96x96', type: 'image/png' }],
+          },
+          {
+            name: 'Drug Checker',
+            short_name: 'Drug Check',
+            url: '/#/landing#demo',
+            icons: [{ src: '/icons/icon-96.png', sizes: '96x96', type: 'image/png' }],
+          },
+          {
+            name: 'My Patients',
+            short_name: 'Patients',
+            url: '/#/patients',
+            icons: [{ src: '/icons/icon-96.png', sizes: '96x96', type: 'image/png' }],
+          },
+        ],
         icons: [
           {
             src: '/icons/icon-192.png',
@@ -34,6 +55,21 @@ export default defineConfig({
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable',
+          },
+          {
+            src: '/icons/icon-180.png',
+            sizes: '180x180',
+            type: 'image/png',
+          },
+          {
+            src: '/icons/icon-144.png',
+            sizes: '144x144',
+            type: 'image/png',
+          },
+          {
+            src: '/icons/icon-96.png',
+            sizes: '96x96',
+            type: 'image/png',
           },
         ],
       },

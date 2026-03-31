@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a3a5c"/>
+      <stop offset="50%" style="stop-color:#1e4d6e"/>
+      <stop offset="100%" style="stop-color:#1a5f5a"/>
+    </linearGradient>
+    <linearGradient id="heart" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6dd5b4"/>
+      <stop offset="100%" style="stop-color:#3b82f6"/>
+    </linearGradient>
+  </defs>
+  <rect width="144" height="144" rx="31.68" fill="url(#bg)"/>
+  <g transform="translate(72, 69.12) scale(2.0571428571428574)">
+    <!-- Heart with pulse line -->
+    <path d="M0 -8 C-6 -18, -20 -12, -20 -2 C-20 8, -6 16, 0 22 C6 16, 20 8, 20 -2 C20 -12, 6 -18, 0 -8 Z" fill="url(#heart)" opacity="0.9"/>
+    <!-- Pulse line -->
+    <polyline points="-14,2 -6,2 -3,-8 0,10 3,-4 6,2 14,2" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="72" y="135.36" text-anchor="middle" font-family="Arial, sans-serif" font-size="12.24" font-weight="800" fill="white" opacity="0.9">ShantiCare</text>
+</svg>

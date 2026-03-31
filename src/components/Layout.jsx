@@ -6,6 +6,9 @@ import Breadcrumbs from "./Breadcrumbs";
 import OfflineIndicator from "./OfflineIndicator";
 import LanguageSwitcher from "./LanguageSwitcher";
 import GoogleTranslate from "./GoogleTranslate";
+import PWAInstallPrompt from "./PWAInstallPrompt";
+import BottomNav from "./BottomNav";
+import NotificationToggle from "./NotificationManager";
 import { useAuth } from "../context/AuthContext";
 import { getConflictCount, onSyncChange } from '../lib/syncManager';
 import {
@@ -423,6 +426,7 @@ export default function Layout() {
             <button className="topbar-btn" onClick={() => setTheme(t => t === "dark" ? "light" : "dark")} title="Toggle theme" aria-label="Toggle dark mode">
               {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
             </button>
+            <NotificationToggle />
             <div ref={notifRef} style={{ position: "relative" }}>
               <button className="topbar-btn" onClick={() => setShowNotifications(s => !s)} title="Notifications" aria-label="Notifications">
                 <Bell size={16} />
@@ -478,6 +482,8 @@ export default function Layout() {
         </div>
       </div>
       <AIGuide />
+      <BottomNav />
+      <PWAInstallPrompt />
     </div>
   );
 }
