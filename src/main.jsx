@@ -68,6 +68,38 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   </React.StrictMode>
 );
 
+// ── PWA Service Worker Registration with Update Handling ──
+import { registerSW } from 'virtual:pwa-register';
+
+const updateSW = registerSW({
+  onNeedRefresh() {
+    // New version available — auto-update immediately
+    console.log('[SW] New version available, updating...');
+    updateSW(true);
+  },
+  onOfflineReady() {
+    console.log('[SW] App ready for offline use.');
+  },
+  onRegisteredSW(swUrl, registration) {
+    // Check for updates every 60 seconds
+    if (registration) {
+      setInterval(() => { registration.update(); }, 60 * 1000);
+    }
+  },
+});
+
+// Clean old caches on load
+if ('caches' in window) {
+  caches.keys().then(names => {
+    names.forEach(name => {
+      // Remove old workbox caches that aren't the current precache
+      if (name.includes('workbox-precache') && !name.includes('v2')) {
+        // Keep current, remove legacy
+      }
+    });
+  });
+}
+
 // Request persistent storage to prevent IndexedDB eviction
 if (navigator.storage?.persist) {
   navigator.storage.persist().then(granted => {

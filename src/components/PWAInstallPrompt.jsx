@@ -35,12 +35,12 @@ export default function PWAInstallPrompt() {
 
     // Check if dismissed recently
     const dismissed = localStorage.getItem('pwa_install_dismissed');
-    if (dismissed && Date.now() - parseInt(dismissed) < 7 * 86400000) return; // 7 days
+    if (dismissed && Date.now() - parseInt(dismissed) < 3 * 86400000) return; // 3 days
 
-    // Show after 30 seconds on page
+    // Show after 5 seconds on page
     const timer = setTimeout(() => {
       if (deferredPrompt || ios) setShow(true);
-    }, 30000);
+    }, 5000);
 
     // Also show immediately if installable event fires
     const handler = () => setShow(true);

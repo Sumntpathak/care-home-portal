@@ -1,0 +1,18 @@
+# Cloudflare Pages — Cache Control Headers
+# Prevent CDN/browser from caching HTML and service worker
+
+/index.html
+  Cache-Control: no-cache, must-revalidate
+
+/sw.js
+  Cache-Control: no-cache, must-revalidate
+
+/manifest.webmanifest
+  Cache-Control: no-cache, must-revalidate
+
+/registerSW.js
+  Cache-Control: no-cache, must-revalidate
+
+# Assets with hashed filenames can be cached forever
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
