@@ -37,6 +37,9 @@ const SyncStatus = lazy(() => import("./pages/SyncStatus"));
 const LabModule = lazy(() => import("./pages/LabModule"));
 const RadiologyModule = lazy(() => import("./pages/RadiologyModule"));
 const ClinicalAudit = lazy(() => import("./pages/ClinicalAudit"));
+const DoctorRegistration = lazy(() => import("./pages/DoctorRegistration"));
+const DoctorOnboarding = lazy(() => import("./pages/DoctorOnboarding"));
+const DoctorTestingDashboard = lazy(() => import("./pages/DoctorTestingDashboard"));
 
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
@@ -82,6 +85,8 @@ export default function App() {
     <Routes>
       <Route path="/landing" element={<Lazy><Landing /></Lazy>} />
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
+      <Route path="/register" element={<Lazy><DoctorRegistration /></Lazy>} />
+      <Route path="/doctor-onboarding" element={<Lazy><DoctorOnboarding /></Lazy>} />
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route index element={<Lazy><Dashboard /></Lazy>} />
         <Route path="users"                element={<RoleGuard allowed={["Admin"]}><Lazy><Users /></Lazy></RoleGuard>} />
@@ -112,6 +117,7 @@ export default function App() {
         <Route path="lab" element={<Lazy><LabModule /></Lazy>} />
         <Route path="radiology" element={<Lazy><RadiologyModule /></Lazy>} />
         <Route path="clinical-audit" element={<RoleGuard allowed={["Admin","Doctor"]}><Lazy><ClinicalAudit /></Lazy></RoleGuard>} />
+        <Route path="doctor-testing" element={<Lazy><DoctorTestingDashboard /></Lazy>} />
       </Route>
       <Route path="*" element={user ? <Navigate to="/" replace /> : <Navigate to="/landing" replace />} />
     </Routes>

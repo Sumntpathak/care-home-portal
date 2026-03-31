@@ -108,6 +108,10 @@ export const patientLogin = DEMO_MODE
   ? demo.patientLogin
   : (receipt) => POST("/api/auth/patient-login", { receiptNo: receipt });
 
+export const registerDoctor = DEMO_MODE
+  ? demo.registerDoctor
+  : (d) => POST("/api/auth/doctor-register", d);
+
 export const authMe = DEMO_MODE
   ? () => Promise.resolve(null)
   : () => GET("/api/auth/me");

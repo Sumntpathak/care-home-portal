@@ -311,6 +311,10 @@ export default function Login() {
               <div className="lp-hint">Demo: <strong>REC-1005-0005</strong></div>
             </form>
           )}
+          <div style={{ textAlign: "center", marginTop: 16 }}>
+            <span style={{ fontSize: 13, color: "var(--text-muted)" }}>Doctor? </span>
+            <a href="#/register" style={{ fontSize: 13, fontWeight: 600, color: "var(--primary)", textDecoration: "none" }}>Register for Clinical Testing</a>
+          </div>
           <div className="lp-footer"><p>Shanti Care Home &copy; 2026</p></div>
         </div>
       </div>

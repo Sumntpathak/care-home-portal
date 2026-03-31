@@ -68,6 +68,7 @@ const NAV_SECTIONS = {
       { to: "/patients", icon: <UserCircle size={I}/>, labelKey: "nav.patients" },
       { to: "/medical-file", icon: <FolderOpen size={I}/>, labelKey: "nav.medicalFile" },
       { to: "/clinical-audit", icon: <Shield size={I}/>, labelKey: "nav.clinicalAudit" },
+      { to: "/doctor-testing", icon: <BarChart3 size={I}/>, labelKey: "nav.doctorTesting" },
     ]},
     { section: "nav.patientCare", id: "care", items: [
       { to: "/care-plans", icon: <FileText size={I}/>, labelKey: "nav.carePlans" },
@@ -369,7 +370,9 @@ export default function Layout() {
             </div>
             {(!collapsed || sidebarOpen) && (
               <div className="sb-user-info">
-                <div className="sb-user-name">{user?.name}</div>
+                <div className="sb-user-name">{user?.name}{user?.testingMode && (
+                  <span style={{ display: "inline-block", padding: "1px 6px", borderRadius: 4, background: "var(--info-light)", color: "var(--info)", fontSize: 9, fontWeight: 700, marginLeft: 4 }}>TESTING</span>
+                )}</div>
                 <div className="sb-user-role">{roleLabel}</div>
               </div>
             )}

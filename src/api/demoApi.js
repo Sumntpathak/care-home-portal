@@ -38,6 +38,37 @@ export async function patientLogin(receipt) {
   };
 }
 
+export async function registerDoctor(data) {
+  await delay(300);
+  const s = getDemoStore();
+  // Check email uniqueness
+  const existing = s.users.find(u => u.email === data.email);
+  if (existing) return { success: false, message: "Email already registered. Please log in." };
+
+  const user = {
+    id: genId("DR"),
+    name: data.name,
+    email: data.email,
+    username: data.email.split("@")[0],
+    phone: data.phone || "",
+    role: "Doctor",
+    position: data.specialization || "General Physician",
+    specialization: data.specialization || "General Physician",
+    degree: data.degree || "MBBS",
+    license: data.license || "",
+    testingMode: true,
+    status: "Active",
+    password: data.password,
+  };
+  s.users.push(user);
+
+  // Log activity
+  if (!s.staffActivity) s.staffActivity = [];
+  s.staffActivity.unshift({ id: genId("ACT"), name: user.name, role: "Doctor", action: "Registered (Testing)", time: new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true}), date: new Date().toISOString().split("T")[0] });
+
+  return { success: true, user: { name: user.name, role: "Doctor", position: user.specialization, email: user.email, specialization: user.specialization, testingMode: true } };
+}
+
 // ── Dashboard ──
 export async function getDashboard(role, name, position) {
   await delay(200);

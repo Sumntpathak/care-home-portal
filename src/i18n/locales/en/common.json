@@ -35,7 +35,8 @@
     "syncStatus": "Sync Status",
     "lab": "Laboratory",
     "radiology": "Radiology",
-    "clinicalAudit": "Clinical Audit"
+    "clinicalAudit": "Clinical Audit",
+    "doctorTesting": "Testing Dashboard"
   },
   "common": {
     "search": "Search",
