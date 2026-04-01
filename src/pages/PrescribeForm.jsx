@@ -173,12 +173,87 @@ export default function PrescribeForm() {
     ).slice(0, 15);
   };
 
-  /* ── Handle selecting a suggestion ── */
+  /* ── Handle selecting a suggestion — with smart dose auto-fill ── */
   const handleSelectSuggestion = (medIndex, suggestion) => {
     updateMed(medIndex, "name", suggestion.name);
-    if (suggestion.unit) {
+
+    // Smart dose suggestion based on medicine name and patient age
+    const name = (suggestion.name || "").toLowerCase();
+    const age = patient?.age || 40;
+    const isElderly = age >= 65;
+    const isPediatric = age < 18;
+
+    // Standard dose lookup (common Indian market medicines)
+    const DOSE_GUIDE = {
+      // Analgesics
+      paracetamol: { dose: isPediatric ? "250mg" : "500mg", freq: "Three times daily", timing: "After Meals", duration: "3 days", note: isPediatric ? "Pediatric dose" : isElderly ? "Max 2g/day in elderly" : "" },
+      ibuprofen: { dose: isElderly ? "200mg" : "400mg", freq: "Three times daily", timing: "After Meals", duration: "5 days", note: isElderly ? "Caution: GI/renal risk in elderly (Beers)" : "" },
+      diclofenac: { dose: "50mg", freq: "Twice daily", timing: "After Meals", duration: "5 days", note: isElderly ? "Avoid if possible in elderly (Beers Criteria)" : "" },
+
+      // Antibiotics
+      amoxicillin: { dose: isPediatric ? "250mg" : "500mg", freq: "Three times daily", timing: "Before Meals", duration: "7 days", note: "Complete full course" },
+      azithromycin: { dose: "500mg", freq: "Once daily", timing: "Before Meals", duration: "3 days", note: "Day 1: 500mg, Day 2-5: 250mg (or 3-day course)" },
+      ciprofloxacin: { dose: "500mg", freq: "Twice daily", timing: "Before Meals", duration: "7 days", note: isElderly ? "QT risk — monitor ECG" : "" },
+      amoxyclav: { dose: "625mg", freq: "Twice daily", timing: "After Meals", duration: "7 days", note: "" },
+      cefixime: { dose: isPediatric ? "100mg" : "200mg", freq: "Twice daily", timing: "After Meals", duration: "5 days", note: "" },
+      metronidazole: { dose: "400mg", freq: "Three times daily", timing: "After Meals", duration: "7 days", note: "Avoid alcohol" },
+      doxycycline: { dose: "100mg", freq: "Twice daily", timing: "After Meals", duration: "7 days", note: "Avoid lying down 30min after dose" },
+      levofloxacin: { dose: "500mg", freq: "Once daily", timing: "Before Meals", duration: "7 days", note: isElderly ? "QT risk — monitor" : "" },
+
+      // Cardiac
+      amlodipine: { dose: isElderly ? "2.5mg" : "5mg", freq: "Once daily", timing: "Morning", duration: "Until further notice", note: isElderly ? "Start low in elderly" : "" },
+      metoprolol: { dose: isElderly ? "25mg" : "50mg", freq: "Twice daily", timing: "After Meals", duration: "Until further notice", note: isElderly ? "Monitor HR — bradycardia risk" : "" },
+      atenolol: { dose: isElderly ? "25mg" : "50mg", freq: "Once daily", timing: "Morning", duration: "Until further notice", note: "" },
+      ramipril: { dose: isElderly ? "2.5mg" : "5mg", freq: "Once daily", timing: "Morning", duration: "Until further notice", note: "Monitor K+ and creatinine" },
+      telmisartan: { dose: "40mg", freq: "Once daily", timing: "Morning", duration: "Until further notice", note: "" },
+      atorvastatin: { dose: isElderly ? "10mg" : "20mg", freq: "Once daily", timing: "At Bedtime", duration: "Until further notice", note: "Take at night for best effect" },
+      rosuvastatin: { dose: isElderly ? "5mg" : "10mg", freq: "Once daily", timing: "At Bedtime", duration: "Until further notice", note: "" },
+      clopidogrel: { dose: "75mg", freq: "Once daily", timing: "After Meals", duration: "Until further notice", note: "" },
+      aspirin: { dose: "75mg", freq: "Once daily", timing: "After Meals", duration: "Until further notice", note: "Enteric coated preferred" },
+
+      // Diabetes
+      metformin: { dose: isElderly ? "500mg" : "500mg", freq: "Twice daily", timing: "After Meals", duration: "Until further notice", note: "Start 500mg OD, titrate. Check renal function." },
+      glimepiride: { dose: isElderly ? "1mg" : "2mg", freq: "Once daily", timing: "Before Meals", duration: "Until further notice", note: isElderly ? "Hypoglycemia risk — start 0.5mg" : "" },
+      insulin: { dose: "As per sliding scale", freq: "As needed (SOS)", timing: "Before Meals", duration: "Until further notice", note: "Adjust per glucose readings" },
+
+      // GI
+      omeprazole: { dose: "20mg", freq: "Once daily", timing: "Empty Stomach", duration: "14 days", note: "Take 30min before breakfast" },
+      pantoprazole: { dose: "40mg", freq: "Once daily", timing: "Empty Stomach", duration: "14 days", note: "Take 30min before breakfast" },
+      domperidone: { dose: "10mg", freq: "Three times daily", timing: "Before Meals", duration: "5 days", note: "Max 7 days — QT risk (EMA)" },
+      ondansetron: { dose: "4mg", freq: "Three times daily", timing: "Before Meals", duration: "3 days", note: "" },
+
+      // Respiratory
+      montelukast: { dose: isPediatric ? "4mg" : "10mg", freq: "Once daily", timing: "At Bedtime", duration: "1 month", note: "" },
+      salbutamol: { dose: "2 puffs", freq: "As needed (SOS)", timing: "Before Meals", duration: "Until further notice", note: "Use spacer for better delivery" },
+
+      // Neuro/Psych
+      alprazolam: { dose: isElderly ? "0.25mg" : "0.5mg", freq: "Once daily", timing: "At Bedtime", duration: "7 days", note: isElderly ? "Beers Criteria — avoid in elderly if possible" : "Short-term only" },
+      amitriptyline: { dose: isElderly ? "10mg" : "25mg", freq: "Once daily", timing: "At Bedtime", duration: "Until further notice", note: isElderly ? "Beers — anticholinergic risk" : "" },
+
+      // Supplements
+      calcium: { dose: "500mg", freq: "Twice daily", timing: "After Meals", duration: "Until further notice", note: "Take with Vitamin D" },
+      "vitamin d": { dose: "60000 IU", freq: "Weekly", timing: "After Meals", duration: "2 months", note: "Then maintenance 1000 IU daily" },
+      iron: { dose: "200mg", freq: "Once daily", timing: "Empty Stomach", duration: "3 months", note: "Take with Vitamin C. Avoid with tea/coffee." },
+      "b complex": { dose: "1 tablet", freq: "Once daily", timing: "After Meals", duration: "1 month", note: "" },
+      multivitamin: { dose: "1 tablet", freq: "Once daily", timing: "After Meals", duration: "1 month", note: "" },
+    };
+
+    // Find matching dose guide
+    let guide = null;
+    for (const [key, val] of Object.entries(DOSE_GUIDE)) {
+      if (name.includes(key)) { guide = val; break; }
+    }
+
+    if (guide) {
+      updateMed(medIndex, "dose", guide.dose);
+      updateMed(medIndex, "frequency", guide.freq);
+      updateMed(medIndex, "timing", guide.timing);
+      updateMed(medIndex, "duration", guide.duration);
+      if (guide.note) updateMed(medIndex, "notes", guide.note);
+    } else if (suggestion.unit) {
       updateMed(medIndex, "dose", `1 ${suggestion.unit}`);
     }
+
     setActiveSuggest(-1);
   };
 

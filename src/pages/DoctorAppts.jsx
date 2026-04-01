@@ -26,12 +26,12 @@ export default function DoctorAppts() {
 
   const load = () => {
     setLoading(true);
-    getDoctorAppointments(user.name)
+    getDoctorAppointments(user?.name)
       .then(r => setAppts(Array.isArray(r) ? r : r.data || []))
       .catch(() => { setAppts([]); addToast("Failed to load appointments.", "error"); })
       .finally(() => setLoading(false));
   };
-  useEffect(load, [user.name]);
+  useEffect(load, [user?.name]);
 
   const waiting = appts.filter(a => a.status === "With Doctor" || a.status === "Scheduled");
 

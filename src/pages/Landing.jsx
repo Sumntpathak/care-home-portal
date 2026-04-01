@@ -1150,6 +1150,11 @@ export default function Landing() {
               onMouseLeave={e => e.target.style.color = "rgba(255,255,255,0.6)"}
             >{l}</span>
           ))}
+          <span onClick={() => { try { localStorage.removeItem("ch_user"); } catch {} navigate("/login"); }}
+            style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, fontWeight: 500, cursor: "pointer", marginRight: 8 }}
+            onMouseEnter={e => e.target.style.color = "#fff"}
+            onMouseLeave={e => e.target.style.color = "rgba(255,255,255,0.7)"}
+          >Sign In</span>
           <button onClick={() => navigate("/register")} style={{
             padding: "8px 20px", borderRadius: 8, border: "none",
             background: "#3b82f6", color: "#fff", fontSize: 14, fontWeight: 600,
@@ -1239,6 +1244,10 @@ export default function Landing() {
             >
               Try Full Demo
             </button>
+          </div>
+          <div style={{ textAlign: "center", marginTop: 12 }}>
+            <span style={{ fontSize: 13, color: "#6b7280" }}>Already registered? </span>
+            <span onClick={() => { try { localStorage.removeItem("ch_user"); } catch {} navigate("/login"); }} style={{ fontSize: 13, fontWeight: 600, color: "#3b82f6", cursor: "pointer" }}>Sign In</span>
           </div>
           <p style={{ fontSize: 13, color: "#4b5563", marginBottom: 48, maxWidth: 500, margin: "0 auto 48px", lineHeight: 1.6 }}>
             Not machine learning. Not generative AI. Deterministic rule engines built on AHA, WHO, ADA, FDA, and 4 more international standards. Every output traceable. Every alert explainable. Audited by 3 independent AI systems — scored 9.5/10 clinical accuracy.

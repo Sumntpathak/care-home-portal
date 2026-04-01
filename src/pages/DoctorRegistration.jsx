@@ -25,6 +25,7 @@ export default function DoctorRegistration() {
   const [saving, setSaving] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [agreed, setAgreed] = useState(false);
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
   const handleRegister = async (e) => {
@@ -66,7 +67,7 @@ export default function DoctorRegistration() {
   return (
     <div style={{ minHeight: "100vh", display: "flex", background: "#f8fafc" }}>
       {/* Left panel — value prop */}
-      <div style={{ flex: "0 0 45%", background: "linear-gradient(155deg, #1a3a5c, #1e4d6e, #1a5f5a, #1e3a4a)", padding: "60px 48px", display: "flex", flexDirection: "column", justifyContent: "center", color: "#fff", position: "relative", overflow: "hidden" }}>
+      <div style={{ flex: "0 0 45%", background: "linear-gradient(155deg, #1a3a5c, #1e4d6e, #1a5f5a, #1e3a4a)", padding: "60px 48px", display: isMobile ? "none" : "flex", flexDirection: "column", justifyContent: "center", color: "#fff", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: "10%", right: "-5%", width: "40%", height: "40%", background: "radial-gradient(circle, rgba(109,213,180,.1), transparent)", pointerEvents: "none" }} />
 
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 40 }}>
@@ -109,6 +110,14 @@ export default function DoctorRegistration() {
       <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 24px" }}>
         <div style={{ maxWidth: 420, width: "100%" }}>
           <div style={{ marginBottom: 28 }}>
+            {isMobile && (
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg, #1a3a5c, #1a5f5a)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <HeartPulse size={18} color="#6dd5b4" />
+              </div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "#111" }}>shanti<span style={{ color: "#3b82f6" }}>care</span></div>
+            </div>
+          )}
             <h2 style={{ fontSize: 24, fontWeight: 800, color: "#111", marginBottom: 6 }}>Register as Doctor</h2>
             <p style={{ fontSize: 14, color: "#6b7280" }}>Create your testing profile to evaluate clinical engines</p>
           </div>
@@ -147,7 +156,7 @@ export default function DoctorRegistration() {
               </div>
 
               {/* Specialization + Degree */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 10 }}>
                 <div>
                   <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 4, display: "block" }}>Specialization</label>
                   <select value={form.specialization} onChange={e => set("specialization", e.target.value)} style={{ width: "100%", padding: "11px 12px", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, background: "#fff" }}>
@@ -169,7 +178,7 @@ export default function DoctorRegistration() {
               </div>
 
               {/* Password */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 10 }}>
                 <div>
                   <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 4, display: "block" }}>Password <span style={{ color: "#dc2626" }}>*</span></label>
                   <div style={{ display: "flex", alignItems: "center", border: "1px solid #e5e7eb", borderRadius: 8, overflow: "hidden" }}>

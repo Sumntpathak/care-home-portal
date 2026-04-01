@@ -18,7 +18,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getDashboard(user.role, user.name, user.position)
+    getDashboard(user?.role, user?.name, user?.position)
       .then(r => setStats(r.data || r))
       .catch(() => setStats({}))
       .finally(() => setLoading(false));
@@ -44,7 +44,7 @@ export default function Dashboard() {
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
           <div>
             <h1 style={{ fontSize: "24px", fontWeight: 800, letterSpacing: "-.03em", color: "var(--text)", marginBottom: "4px" }}>
-              {greeting}, {(user.name || "").split(" ")[0]}
+              {greeting}, {(user?.name || "").split(" ")[0]}
             </h1>
             <p style={{ fontSize: "14px", color: "var(--text-muted)" }}>{dateStr}</p>
           </div>
@@ -285,7 +285,7 @@ export default function Dashboard() {
       </>}
 
       {/* ── STAFF DASHBOARDS ── */}
-      {user.role === "Staff" && (position === "Appointment Desk" || position === "Receptionist") && (
+      {user?.role === "Staff" && (position === "Appointment Desk" || position === "Receptionist") && (
         <div className="stat-grid stagger">
           <div className="stat-card">
             <div className="stat-icon" style={{ background: "var(--info-light)" }}><CalendarDays size={20} color="var(--info)" /></div>
@@ -305,7 +305,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {user.role === "Staff" && position === "Dispensary" && (
+      {user?.role === "Staff" && position === "Dispensary" && (
         <div className="stat-grid stagger">
           <div className="stat-card">
             <div className="stat-icon" style={{ background: "var(--warning-light)" }}><Pill size={20} color="var(--warning)" /></div>
@@ -320,7 +320,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {user.role === "Staff" && position === "Home Care" && <>
+      {user?.role === "Staff" && position === "Home Care" && <>
         <div className="stat-grid stagger">
           <div className="stat-card">
             <div className="stat-icon" style={{ background: "var(--primary-light)" }}><Users size={20} color="var(--primary)" /></div>
