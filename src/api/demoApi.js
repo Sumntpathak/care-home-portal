@@ -2,7 +2,7 @@
 //  DEMO API — Local mock API that mirrors Google Sheets API
 //  All data is stored in-memory via demoData.js
 // ═══════════════════════════════════════════════════════════
-import { getDemoStore, genId } from "./demoData";
+import { getDemoStore, genId, persistTestDoctor } from "./demoData";
 
 const delay = (ms = 200) => new Promise(r => setTimeout(r, ms + Math.random() * 150));
 const today = () => new Date().toISOString().split("T")[0];
@@ -61,6 +61,7 @@ export async function registerDoctor(data) {
     password: data.password,
   };
   s.users.push(user);
+  persistTestDoctor(user); // Save to localStorage so login survives page refresh
 
   // Log activity
   if (!s.staffActivity) s.staffActivity = [];

@@ -461,6 +461,27 @@ export function getDemoStore() {
       staffActivity: clone(STAFF_ACTIVITY),
       maternityFiles: clone(MATERNITY_FILES),
     };
+
+    // Restore registered test doctors from localStorage (survive page refresh)
+    try {
+      const saved = JSON.parse(localStorage.getItem("registered_test_doctors") || "[]");
+      saved.forEach(doc => {
+        if (!window.__demoStore.users.find(u => u.email === doc.email)) {
+          window.__demoStore.users.push(doc);
+        }
+      });
+    } catch {}
   }
   return window.__demoStore;
+}
+
+/** Save a test doctor to localStorage so they survive page refresh */
+export function persistTestDoctor(user) {
+  try {
+    const saved = JSON.parse(localStorage.getItem("registered_test_doctors") || "[]");
+    if (!saved.find(u => u.email === user.email)) {
+      saved.push(user);
+      localStorage.setItem("registered_test_doctors", JSON.stringify(saved));
+    }
+  } catch {}
 }
