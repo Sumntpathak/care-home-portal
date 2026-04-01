@@ -335,5 +335,10 @@ export const updateMaternityStatus = DEMO_MODE
   ? demo.updateMaternityStatus
   : (id, s, d) => dataLayer.write("maternityFiles", { status: s, ...d }, () => PATCH(`/api/maternity/${id}/status`, { status: s, ...d }), { method: "PATCH", url: `/api/maternity/${id}/status` });
 
+// ── Test Doctor Data Persistence ──
+export const persistTestDoctorData = DEMO_MODE ? demo.persistTestDoctorData : () => {};
+export const loadTestDoctorData = DEMO_MODE ? demo.loadTestDoctorData : () => null;
+export const exportTestDoctorReport = DEMO_MODE ? demo.exportTestDoctorReport : () => ({});
+
 // ── Data Layer utilities (re-export for AuthContext / pre-caching) ──
 export { precacheAll } from "../lib/dataLayer";

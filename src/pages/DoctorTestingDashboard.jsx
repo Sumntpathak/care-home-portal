@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../components/Toast";
 import { getAuditTrail, getAuditStats, exportAuditTrail } from "../utils/auditTrail";
+import { exportTestDoctorReport } from "../api/sheets";
 import { BarChart3, Clock, Check, XCircle, AlertTriangle, Download, Pill, Activity, Heart, ArrowRightLeft, Shield, FileText, ChevronRight } from "lucide-react";
 
 const ENGINE_COLORS = {
@@ -78,6 +79,18 @@ export default function DoctorTestingDashboard() {
         <div style={{ display: "flex", gap: 8 }}>
           <button className="btn btn-outline btn-sm" onClick={() => handleExport("csv")}><Download size={13} /> CSV</button>
           <button className="btn btn-primary btn-sm" onClick={() => handleExport("json")}><Download size={13} /> JSON Report</button>
+          <button className="btn btn-success btn-sm" onClick={() => {
+            const report = exportTestDoctorReport(user?.name);
+            const json = JSON.stringify(report, null, 2);
+            const blob = new Blob([json], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `clinical-validation-report-${user?.name?.replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            addToast("Full testing report exported with patient data + engine calls + feedback.", "success");
+          }}><Download size={13} /> Full Validation Report</button>
         </div>
       </div>
 
@@ -212,6 +225,23 @@ export default function DoctorTestingDashboard() {
             );
           })
         )}
+      </div>
+
+      {/* Testing Evidence Summary */}
+      <div className="card" style={{ marginTop: 14, background: "var(--subtle)" }}>
+        <div className="card-header"><h3>Your Clinical Validation Evidence</h3></div>
+        <div style={{ padding: "4px 0", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.8 }}>
+          <div>Patients created: <strong>{entries.filter(e => e.engineName === "addPatient").length || "—"}</strong></div>
+          <div>Prescriptions written: <strong>{entries.filter(e => e.engineName === "drugInteractions").length || stats?.byEngine?.drugInteractions || 0}</strong></div>
+          <div>Vitals analyzed: <strong>{stats?.byEngine?.vitalsAnalyzer || 0}</strong></div>
+          <div>Diet plans generated: <strong>{stats?.byEngine?.dietEngine || 0}</strong></div>
+          <div>Handovers reviewed: <strong>{stats?.byEngine?.handoverEngine || 0}</strong></div>
+          <div>Feedback given: <strong>{feedbackEntries.length}</strong> ({validCount} valid, {overrideCount} override, {fpCount} false positive)</div>
+          <div>False positive rate: <strong>{stats?.falsePositiveRate || 0}%</strong></div>
+        </div>
+        <div style={{ marginTop: 10, padding: "10px 14px", background: "var(--info-light)", borderRadius: 8, fontSize: 12, color: "var(--info)" }}>
+          This data is stored locally and can be exported as a clinical validation report. Share it with hospital administrators or investors as evidence of engine accuracy.
+        </div>
       </div>
     </div>
   );

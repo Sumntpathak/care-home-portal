@@ -11,17 +11,17 @@ const today = () => new Date().toISOString().split("T")[0];
 export async function login(username, password) {
   await delay(300);
   const s = getDemoStore();
+  const DEMO_PASSWORDS = ["admin123", "doc123", "staff123"];
   const u = s.users.find(u =>
     (u.username === username || u.email === username) &&
-    (password === "admin123" || password === "doc123" || password === "staff123")
+    (DEMO_PASSWORDS.includes(password) || u.password === password)
   );
   if (u) {
-    // Track login activity
     if (!s.staffActivity) s.staffActivity = [];
     s.staffActivity.unshift({ id: genId("ACT"), name: u.name, role: u.role, action: "Login", time: new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true}), date: today() });
-    return { success: true, user: { name: u.name, role: u.role, position: u.position, email: u.email } };
+    return { success: true, user: { name: u.name, role: u.role, position: u.position || u.specialization, email: u.email, specialization: u.specialization, testingMode: u.testingMode || false } };
   }
-  return { success: false, message: "Invalid credentials. Try demo buttons." };
+  return { success: false, message: "Invalid credentials. Try demo buttons or register as a doctor." };
 }
 
 export async function patientLogin(receipt) {
@@ -73,30 +73,46 @@ export async function registerDoctor(data) {
 export async function getDashboard(role, name, position) {
   await delay(200);
   const s = getDemoStore();
-  const todayAppts = s.appointments.filter(a => a.date === today());
+  const isTestDoctor = s.users.find(u => u.name === name && u.testingMode);
+  const td = today();
+
+  // Test doctors see only their own data
+  const myPatients = isTestDoctor ? s.patients.filter(p => p.addedBy === name) : s.patients;
+  const myAppts = isTestDoctor
+    ? s.appointments.filter(a => a.doctor === name || a.createdBy === name)
+    : s.appointments;
+  const todayAppts = myAppts.filter(a => a.date === td);
+  const myRx = isTestDoctor
+    ? s.prescriptions.filter(p => p.doctor === name || p.doctorName === name)
+    : s.prescriptions;
+  const myBilling = isTestDoctor
+    ? s.billing.filter(b => myAppts.some(a => a.receiptNo === b.receiptNo))
+    : s.billing;
+
   const data = {
-    totalPatients: s.patients.length,
+    totalPatients: myPatients.length,
     todayAppointments: todayAppts.length,
     totalMedicines: s.medicines.length,
     lowStock: s.medicines.filter(m => m.stock <= m.minStock).length,
-    revenue: s.billing.filter(b => b.date === today() && b.status === "Paid").reduce((sum, b) => sum + (b.amount || 0), 0),
-    pendingBills: s.billing.filter(b => b.status === "Pending").length,
-    pendingDispensary: s.prescriptions.filter(p => p.status === "To Dispensary").length,
-    dispensedToday: s.prescriptions.filter(p => p.status === "Dispensed" && p.date === today()).length,
+    revenue: myBilling.filter(b => b.date === td && b.status === "Paid").reduce((sum, b) => sum + (b.amount || 0), 0),
+    pendingBills: myBilling.filter(b => b.status === "Pending").length,
+    pendingDispensary: myRx.filter(p => p.status === "To Dispensary").length,
+    dispensedToday: myRx.filter(p => p.status === "Dispensed" && p.date === td).length,
     todayList: todayAppts,
-    // Nursing home specific
-    totalResidents: s.homeCarePatients.length,
-    occupiedBeds: s.rooms.flatMap(r => r.beds).filter(b => b.status === "Occupied").length,
-    totalBeds: s.rooms.flatMap(r => r.beds).length,
-    availableBeds: s.rooms.flatMap(r => r.beds).filter(b => b.status === "Available").length,
-    activeIncidents: s.incidents.filter(i => i.status !== "Resolved").length,
-    todayVisitors: s.visitors.filter(v => v.date === today()).length,
-    pendingHandovers: s.shiftHandovers.filter(h => h.status === "Pending").length,
+    totalResidents: isTestDoctor ? myPatients.length : s.homeCarePatients.length,
+    occupiedBeds: isTestDoctor ? 0 : s.rooms.flatMap(r => r.beds).filter(b => b.status === "Occupied").length,
+    totalBeds: isTestDoctor ? 0 : s.rooms.flatMap(r => r.beds).length,
+    availableBeds: isTestDoctor ? 0 : s.rooms.flatMap(r => r.beds).filter(b => b.status === "Available").length,
+    activeIncidents: isTestDoctor ? s.incidents.filter(i => i.reportedBy === name && i.status !== "Resolved").length : s.incidents.filter(i => i.status !== "Resolved").length,
+    todayVisitors: isTestDoctor ? 0 : s.visitors.filter(v => v.date === td).length,
+    pendingHandovers: isTestDoctor ? 0 : s.shiftHandovers.filter(h => h.status === "Pending").length,
   };
   if (role === "Doctor") {
     data.myWaiting = todayAppts.filter(a => a.doctor === name && (a.status === "With Doctor" || a.status === "Scheduled")).length;
-    data.myRx = s.prescriptions.filter(p => p.doctor === name).length;
+    data.myRx = myRx.length;
   }
+  // Test doctor flag
+  data._isTestDoctor = !!isTestDoctor;
   return { data };
 }
 
@@ -150,7 +166,7 @@ export async function getStaffSalary(name) {
 export async function getPatients() { await delay(); return { data: getDemoStore().patients }; }
 export async function addPatient(d) {
   await delay();
-  const p = { id: genId("PAT"), ...d, status: "Active" };
+  const p = { id: genId("PAT"), ...d, status: "Active", addedBy: d.addedBy || "" };
   getDemoStore().patients.push(p);
   return { success: true, patient: p };
 }
@@ -168,7 +184,8 @@ export async function createAppointment(d) {
   const receiptNo = `REC-${Date.now().toString().slice(-4)}-${Math.floor(Math.random()*9000+1000)}`;
   const appt = { receiptNo, ...d, status: "Scheduled", date: d.date || today() };
   getDemoStore().appointments.unshift(appt);
-  getDemoStore().billing.unshift({ receiptNo, patientName: d.patientName, date: appt.date, doctor: d.doctor, amount: Number(d.bill) || 500, status: "Pending", type: "Consultation" });
+  const isTestDoc = getDemoStore().users.find(u => u.name === d.createdBy && u.testingMode);
+  getDemoStore().billing.unshift({ receiptNo, patientName: d.patientName, date: appt.date, doctor: d.doctor, amount: isTestDoc ? 0 : (Number(d.bill) || 500), status: isTestDoc ? "Waived" : "Pending", type: "Consultation" });
   return { success: true, receiptNo, appointment: appt };
 }
 export async function updateAppointmentStatus(receiptNo, status) {
@@ -197,9 +214,33 @@ export async function getPrescriptions(filter) {
 }
 export async function savePrescription(d) {
   await delay();
-  getDemoStore().prescriptions.unshift({ ...d, date: d.date || today() });
-  const a = getDemoStore().appointments.find(a => a.receiptNo === d.receiptNo);
+  const s = getDemoStore();
+  s.prescriptions.unshift({ ...d, date: d.date || today() });
+  const a = s.appointments.find(a => a.receiptNo === d.receiptNo);
   if (a) a.status = "To Dispensary";
+
+  // Auto-add prescribed medicines to stock (infinite quantity for testing)
+  try {
+    const meds = JSON.parse(d.medications || "[]");
+    meds.forEach(med => {
+      if (!med.name) return;
+      const existing = s.medicines.find(m => m.name.toLowerCase() === med.name.toLowerCase());
+      if (!existing) {
+        s.medicines.push({
+          id: genId("M"),
+          name: med.name,
+          category: "Auto-added",
+          stock: 99999,
+          minStock: 10,
+          unit: med.dose?.includes("ml") ? "ml" : "tablets",
+          price: 0,
+          supplier: "Test Stock",
+          addedBy: d.doctorName || "",
+        });
+      }
+    });
+  } catch {}
+
   return { success: true };
 }
 
@@ -503,4 +544,47 @@ export async function updateMaternityStatus(fileId, status, details = {}) {
   if (status === "Delivered") { f.deliveryDate = details.deliveryDate || new Date().toISOString().split("T")[0]; f.deliveryNotes = details.deliveryNotes || ""; }
   if (status === "Closed") { f.closedAt = new Date().toISOString(); f.closedReason = details.closedReason || "Normal Closure"; }
   return { success: true };
+}
+
+// ── Test Doctor Data Persistence ──
+// Save test doctor activity to localStorage so it survives page refresh
+
+export function persistTestDoctorData(doctorName) {
+  const s = getDemoStore();
+  const testData = {
+    doctorName,
+    savedAt: new Date().toISOString(),
+    patients: s.patients.filter(p => p.addedBy === doctorName),
+    appointments: s.appointments.filter(a => a.doctor === doctorName || a.createdBy === doctorName),
+    prescriptions: s.prescriptions.filter(p => p.doctor === doctorName || p.doctorName === doctorName),
+    incidents: s.incidents.filter(i => i.reportedBy === doctorName),
+    homeCareNotes: s.homeCareNotes.filter(n => n.recordedBy === doctorName),
+  };
+  try {
+    localStorage.setItem(`test_doctor_data_${doctorName}`, JSON.stringify(testData));
+  } catch {}
+  return testData;
+}
+
+export function loadTestDoctorData(doctorName) {
+  try {
+    const raw = localStorage.getItem(`test_doctor_data_${doctorName}`);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch { return null; }
+}
+
+export function exportTestDoctorReport(doctorName) {
+  const data = persistTestDoctorData(doctorName);
+  // Also include audit trail
+  try {
+    const auditTrail = JSON.parse(localStorage.getItem("shanti_audit_trail") || "[]");
+    data.auditTrail = auditTrail.filter(e => e.user === doctorName);
+    data.engineCalls = data.auditTrail.length;
+    data.feedbackGiven = data.auditTrail.filter(e => e.feedback).length;
+    data.falsePositives = data.auditTrail.filter(e => e.feedback?.action === "false-positive").length;
+    data.validations = data.auditTrail.filter(e => e.feedback?.action === "valid").length;
+    data.overrides = data.auditTrail.filter(e => e.feedback?.action === "override").length;
+  } catch {}
+  return data;
 }

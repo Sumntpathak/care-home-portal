@@ -84,7 +84,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/landing" element={<Lazy><Landing /></Lazy>} />
-      <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
+      <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Lazy><DoctorRegistration /></Lazy>} />
       <Route path="/doctor-onboarding" element={<Lazy><DoctorOnboarding /></Lazy>} />
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>

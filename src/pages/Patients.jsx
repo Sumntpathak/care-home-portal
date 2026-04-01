@@ -6,10 +6,12 @@ import DataTable from "../components/DataTable";
 import { initials, conditionColor } from "../utils/formatters";
 import { validateName, validatePhone } from "../utils/security";
 import { useToast } from "../components/Toast";
+import { useAuth } from "../context/AuthContext";
 
 export default function Patients() {
   const navigate = useNavigate();
   const { addToast } = useToast();
+  const { user } = useAuth();
   const [patients, setPatients] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -37,7 +39,7 @@ export default function Patients() {
     if (form.age && (isNaN(form.age) || form.age < 0 || form.age > 150)) { setErr("Age must be between 0 and 150."); return; }
     setSaving(true); setErr("");
     try {
-      const r = await addPatient(form);
+      const r = await addPatient({ ...form, addedBy: user?.name || "" });
       if (r.success !== false) {
         setShowForm(false);
         setForm({name:"",phone:"",age:"",gender:"Male",room:"",condition:"",guardian:"",status:"Active",patientType:"General"});

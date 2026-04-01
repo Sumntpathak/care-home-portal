@@ -7,6 +7,7 @@ import { validateDischargeSummary, checkDischargeReadiness } from "../utils/nabh
 import { printElement, DailyCareReport, DischargeFile } from "../print";
 import { usePagination } from "../components/Pagination";
 import { useToast } from "../components/Toast";
+import { useAuth } from "../context/AuthContext";
 
 const VITALS_TEMPLATE = { temp:"", bp:"", pulse:"", spo2:"", glucose:"", weight:"" };
 
@@ -321,6 +322,7 @@ function MiniLineChart({ data, config, width = "100%", height = 80 }) {
 
 function NoteModal({ patient, onClose }) {
   const { addToast } = useToast();
+  const { user } = useAuth();
   const [notes, setNotes]   = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -343,7 +345,7 @@ function NoteModal({ patient, onClose }) {
     e.preventDefault();
     setSaving(true);
     try {
-      await addHomeCareNote({ ...form, patientId: patient.id, patientName: patient.name });
+      await addHomeCareNote({ ...form, patientId: patient.id, patientName: patient.name, recordedBy: user?.name || "" });
       setShowForm(false);
       const r = await getHomeCareNotes(patient.id);
       setNotes(Array.isArray(r)?r:r.data||[]);
@@ -448,6 +450,7 @@ function NoteModal({ patient, onClose }) {
 
         {/* ───────────────────── Vitals Trends ───────────────────── */}
         {(() => {
+          try {
           const vitalsReport = notes.length >= 2 ? generateVitalsReport(notes, patient) : null;
           if (!vitalsReport) return null;
 
@@ -538,6 +541,7 @@ function NoteModal({ patient, onClose }) {
               </div>
             </div>
           );
+          } catch { return null; }
         })()}
       </div>
     </div>
@@ -547,6 +551,7 @@ function NoteModal({ patient, onClose }) {
 /* ───────────────────── Main HomeCare Page ───────────────────── */
 export default function HomeCare() {
   const { addToast } = useToast();
+  const { user } = useAuth();
   const [patients, setPatients] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [showForm, setShowForm] = useState(false);
