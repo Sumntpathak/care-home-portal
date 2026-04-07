@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { getAppointments, createAppointment, updateAppointmentStatus, getUsers, getPrescriptions } from "../api/sheets";
-import { Plus, Printer, Search, X, FileText } from "lucide-react";
+import { Plus, Printer, Search, X, FileText, MessageCircle, RefreshCw } from "lucide-react";
 import UnifiedReceipt from "../components/UnifiedReceipt";
 import { generateDietPlan, generateHealthAdvice } from "../utils/healthAdvisor";
 import { printElement, OpdReceipt } from "../print";
@@ -24,12 +24,21 @@ function statusBadge(s) {
 function PrescriptionPrint({ appt, onClose }) {
   if (!appt) return null;
   return (
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.55)",backdropFilter:"blur(2px)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"clamp(16px, 4vw, 40px)",paddingTop:"clamp(24px, 5vh, 60px)",overflowY:"auto"}}>
-      <div style={{background:"#fff",borderRadius:"14px",padding:"20px",maxWidth:"min(90vw, 520px)",width:"100%",maxHeight:"calc(100vh - 80px)",overflowY:"auto",boxShadow:"0 12px 48px rgba(0,0,0,.2)",animation:"modalIn .2s ease-out"}}>
+    <div className="modal-backdrop">
+      <div className="modal-sheet print-receipt" style={{maxWidth:"520px"}}>
         <OpdReceipt data={appt} />
         <div className="no-print" style={{display:"flex",gap:"8px",marginTop:"14px"}}>
           <button className="btn btn-primary" style={{flex:1,justifyContent:"center"}} onClick={() => printElement("print-opd-receipt", { pageSize: "A5" })}>
             <Printer size={14}/> Print Receipt
+          </button>
+          <button className="btn btn-success no-print" style={{flex:1,justifyContent:"center"}}
+            onClick={() => {
+              const phone = appt.phone?.replace(/\D/g,'');
+              if (!phone) return;
+              const msg = `नमस्ते ${appt.patientName} जी,\nShanti Care Home में आपका OPD रजिस्ट्रेशन हो गया है।\nReceipt No: ${appt.receiptNo}\nडॉक्टर: ${appt.doctor}\nतारीख: ${appt.date}\nकृपया समय पर आएं। - Shanti Care`;
+              window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+            }}>
+            <MessageCircle size={14}/> WhatsApp
           </button>
           <button className="btn btn-outline" onClick={onClose}><X size={14}/></button>
         </div>
@@ -55,7 +64,7 @@ export default function Appointments() {
   const today = new Date().toISOString().split("T")[0];
 
   const [form, setForm] = useState({
-    patientName:"", phone:"", doctor:"", date:today, type:TYPES[0], billAmount:"100", notes:"",
+    patientName:"", age:"", gender:"", phone:"", doctor:"", date:today, type:TYPES[0], billAmount:"100", notes:"",
   });
   const set = (k,v) => setForm(p => ({...p,[k]:v}));
 
@@ -72,7 +81,10 @@ export default function Appointments() {
     // Fetch doctors from Users sheet
     getUsers()
       .then(r => {
-        const list = r?.data || (Array.isArray(r) ? r : []);
+        // Handle multiple response formats:
+        // - dataLayer.read returns mapped array directly
+        // - demo API returns { data: [...] }
+        const list = Array.isArray(r) ? r : (r?.data || []);
         const docs = list
           .filter(u => String(u.role || "").toLowerCase() === "doctor")
           .map(u => String(u.name || "").trim())
@@ -102,9 +114,12 @@ export default function Appointments() {
     if (!validatePhone(form.phone)) { setErr("Phone must be 10-13 digits."); return; }
     if (form.billAmount && (parseFloat(form.billAmount) < 0)) { setErr("Consultation fee cannot be negative."); return; }
     if (!form.doctor) { setErr("Please select a doctor."); return; }
+    if (!form.age || isNaN(parseInt(form.age)) || parseInt(form.age) <= 0) { setErr("Patient age is required."); return; }
     setSaving(true); setErr("");
     const payload = {
       patientName: form.patientName,
+      age:         form.age ? parseInt(form.age) : null,
+      gender:      form.gender || null,
       phone:       form.phone,
       doctor:      form.doctor,           // backend maps to 'Assigned Dr'
       date:        form.date,
@@ -119,7 +134,7 @@ export default function Appointments() {
         // Use backend-generated receiptNo for the print slip
         setPrintAppt({ ...payload, receiptNo: r.receiptNo });
         setShowForm(false);
-        setForm({ patientName:"", phone:"", doctor: doctors[0]||"", date:today, type:TYPES[0], billAmount:"100", notes:"" });
+        setForm({ patientName:"", age:"", gender:"", phone:"", doctor: doctors[0]||"", date:today, type:TYPES[0], billAmount:"100", notes:"" });
         load();
       } else {
         setErr(r.error || r.message || "Failed to create appointment.");
@@ -142,7 +157,7 @@ export default function Appointments() {
       const rxRes = await getPrescriptions();
       const allRx = Array.isArray(rxRes) ? rxRes : rxRes?.data || [];
       const rx = allRx.find(r => r.receiptNo === appt.receiptNo);
-      const patient = { name: appt.patientName, age: 70, condition: appt.type, diagnosis: rx?.diagnosis || appt.notes || appt.type };
+      const patient = { name: appt.patientName, age: appt.age || 40, condition: appt.type, diagnosis: rx?.diagnosis || appt.notes || appt.type };
       const dietPlan = generateDietPlan(patient);
       const healthAdvice = generateHealthAdvice(patient, null, rx?.diagnosis || appt.notes || appt.type);
       setUnifiedData({
@@ -209,6 +224,21 @@ export default function Appointments() {
             </div>
             <div className="form-row">
               <div className="field">
+                <label>Age <span className="req">*</span> <span style={{fontSize:"11px",color:"var(--text-muted)"}}>(years)</span></label>
+                <input type="number" min="1" max="120" required value={form.age} onChange={e=>set("age",e.target.value)} placeholder="e.g. 35" />
+              </div>
+              <div className="field">
+                <label>Gender</label>
+                <select value={form.gender||""} onChange={e=>set("gender",e.target.value)}>
+                  <option value="">— Not specified —</option>
+                  <option>Male</option>
+                  <option>Female</option>
+                  <option>Other</option>
+                </select>
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="field">
                 <label>Doctor <span className="req">*</span></label>
                 <select value={form.doctor} onChange={e=>set("doctor",e.target.value)}>
                   {doctors.length === 0
@@ -252,7 +282,7 @@ export default function Appointments() {
       <div className="card">
         <div className="card-header">
           <h3>Today's Appointments</h3>
-          <button className="btn btn-outline btn-sm" onClick={load}>Refresh</button>
+          <button className="btn btn-outline btn-sm" onClick={load}><RefreshCw size={13} /> Refresh</button>
         </div>
         <div className="search-box">
           <Search size={14}/>
@@ -272,7 +302,7 @@ export default function Appointments() {
               </tr></thead>
               <tbody>
                 {filtered.length === 0 && (
-                  <tr><td colSpan={7} style={{textAlign:"center",color:"var(--text-light)",padding:"28px"}}>No appointments today</td></tr>
+                  <tr><td colSpan={7}><div className="table-empty-state"><Search size={28} /><div>No appointments found</div><p>Try changing your search or filters</p></div></td></tr>
                 )}
                 {paginated.map((a,i) => (
                   <tr key={i}>
@@ -313,7 +343,10 @@ export default function Appointments() {
                 ))}
               </tbody>
             </table>
-            <Pager />
+            <div className="table-footer">
+              <span className="table-record-count">{filtered.length} record{filtered.length !== 1 ? "s" : ""}</span>
+              <Pager />
+            </div>
           </div>
         )}
       </div>
