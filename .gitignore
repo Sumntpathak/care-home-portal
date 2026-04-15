@@ -7,3 +7,28 @@ dist/
 *.log
 .DS_Store
 Thumbs.db
+
+# Build & test artifacts
+test-results/
+playwright-report/
+screenshots/
+demo-videos/
+
+# AI tooling / sessions / scratch
+.claude/
+.claude-flow/
+.mcp.json
+design-system/
+
+# Stray shell outputs
+a.priority
+cb
+e.id
+e.status
+{
+UserspathaDownloads*
+.modal-sheet*
+
+# Editor / OS
+.vscode/*.log
+.idea/
