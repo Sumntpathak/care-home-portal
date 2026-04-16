@@ -100,6 +100,31 @@ export function AuthProvider({ children }) {
 
   const loginUser = useCallback(async (u) => {
     setSessionWarning(0);
+
+    // Reset language to English on fresh login. Any stale googtrans cookie
+    // from a previous session (or from landing-page browsing) is cleared so
+    // the dashboard always starts in English. User can re-pick their
+    // language from the topbar once inside.
+    try {
+      const hadGoogleTranslate = !!document.cookie.match(/googtrans=\/en\//);
+      localStorage.removeItem("sc_language");
+      document.cookie = "googtrans=;path=/;expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      document.cookie = "googtrans=;path=/;domain=" + location.hostname + ";expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      var parts = location.hostname.split(".");
+      if (parts.length > 1) {
+        document.cookie = "googtrans=;path=/;domain=." + parts.slice(-2).join(".") + ";expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      }
+      // If Google Translate had been applied (DOM was mutated), we need a
+      // one-time reload so the dashboard mounts on a clean untranslated tree.
+      // Do the reload AFTER user state is stored so the session survives.
+      if (hadGoogleTranslate) {
+        setUser(u);
+        await initSessionKey();
+        setTimeout(() => location.reload(), 30);
+        return;
+      }
+    } catch {}
+
     setUser(u);
     // Initialize non-extractable encryption key in memory
     await initSessionKey();

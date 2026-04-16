@@ -56,21 +56,56 @@ export default function GoogleTranslate() {
   }, [search]);
 
   const handleSelect = (code) => {
-    setCurrentCode(code);
     setIsOpen(false);
     setSearch('');
     localStorage.setItem('sc_language', code);
 
-    // Update i18n (for languages that have hand-crafted translations, falls back to en)
     const lang = LANGUAGES.find(l => l.code === code);
-    i18n.changeLanguage(lang?.hasI18n ? code : 'en');
+    const currentHasGoogleTranslate = !!document.cookie.match(/googtrans=\/en\//);
 
-    // Trigger Google Translate
+    // Three paths, none of which stack Google-Translate DOM mutations:
+    //
+    // 1. English: clear the googtrans cookie + reload → fresh untranslated page.
+    // 2. Hand-crafted i18n language (hi/ta/te/kn/mr/gu/bn/or/pa/ml): use
+    //    react-i18next; don't touch Google Translate; no reload needed.
+    //    But if Google Translate was already active, we MUST clear its cookie
+    //    and reload once, otherwise its DOM mutations collide with i18n.
+    // 3. Google-Translate-only language: set cookie + reload so the widget
+    //    re-initializes cleanly. This also handles the "switch from one GT
+    //    language to another" case without stacking mutations.
+
     if (code === 'en') {
-      window.resetGoogleTranslate?.();
-    } else {
-      window.triggerGoogleTranslate?.(code);
+      document.cookie = 'googtrans=;path=/;expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      document.cookie = 'googtrans=;path=/;domain=' + location.hostname + ';expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      i18n.changeLanguage('en');
+      if (currentHasGoogleTranslate) {
+        location.reload();
+      } else {
+        setCurrentCode('en');
+      }
+      return;
     }
+
+    if (lang?.hasI18n) {
+      // If Google Translate was active, we need a reload to unwind its DOM
+      // changes before react-i18next takes over.
+      if (currentHasGoogleTranslate) {
+        document.cookie = 'googtrans=;path=/;expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        document.cookie = 'googtrans=;path=/;domain=' + location.hostname + ';expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        i18n.changeLanguage(code);
+        location.reload();
+      } else {
+        i18n.changeLanguage(code);
+        setCurrentCode(code);
+      }
+      return;
+    }
+
+    // Non-i18n language → always reload with cookie. Reliable, no mutation stack.
+    i18n.changeLanguage('en'); // fallback so partial strings stay sane
+    document.cookie = 'googtrans=/en/' + code + ';path=/';
+    document.cookie = 'googtrans=/en/' + code + ';path=/;domain=' + location.hostname;
+    location.reload();
   };
 
   const continentOrder = ['default', 'asia_india', 'europe', 'middle_east', 'asia_east', 'africa', 'americas', 'oceania'];
