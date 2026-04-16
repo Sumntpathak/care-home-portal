@@ -1404,13 +1404,17 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 /* ── TABLES ── */
 .table-wrap {
   border: 1px solid var(--border); border-radius: var(--radius-md);
-  overflow: hidden; background: var(--card);
+  overflow-x: auto;        /* allow horizontal scroll instead of clipping */
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  background: var(--card);
   margin-bottom: 4px;
 }
 /* Any table inside a card gets consistent spacing */
 .card > .table-wrap { margin: -16px; margin-top: 0; border: none; border-top: 1px solid var(--border); border-radius: 0; }
 .card > .table-wrap:last-child { margin-bottom: -16px; border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
-table.data-table { width: 100%; border-collapse: collapse; }
+table.data-table { width: 100%; min-width: max-content; border-collapse: collapse; }
 table.data-table th {
   padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 600;
   color: var(--text-secondary); background: var(--subtle);
@@ -2924,10 +2928,15 @@ body:has(.sc-modal) { overflow: hidden !important; }
 /* Matches dt-table styling exactly for visual consistency */
 .data-table {
   width: 100%;
+  min-width: max-content;
   border-collapse: separate;
   border-spacing: 0;
   font-size: 13px;
-  table-layout: fixed;
+  table-layout: auto;
+}
+.data-table tbody td:last-child,
+.data-table thead th:last-child {
+  white-space: nowrap;
 }
 .data-table thead th {
   background: var(--subtle);
@@ -2956,8 +2965,13 @@ body:has(.sc-modal) { overflow: hidden !important; }
   border-bottom: 1px solid var(--border);
   color: var(--text);
   vertical-align: middle;
+  /* No cell clipping — wrap container scrolls on overflow. */
+}
+.data-table td.cell-truncate {
+  max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .data-table tbody tr:last-child td {
   border-bottom: none;
@@ -3457,16 +3471,28 @@ input:focus, select:focus, textarea:focus {
 
 .dt-table-wrap {
   overflow-x: auto;
+  overflow-y: visible;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
   min-height: 200px; /* minimum height even with few rows */
+  /* Visual hint that content can scroll sideways on overflow */
+  background:
+    linear-gradient(to right, var(--card) 30%, transparent),
+    linear-gradient(to right, transparent, var(--card) 70%) 100% 0,
+    radial-gradient(farthest-side at 0 50%, color-mix(in srgb, var(--text) 10%, transparent), transparent),
+    radial-gradient(farthest-side at 100% 50%, color-mix(in srgb, var(--text) 10%, transparent), transparent) 100% 0;
+  background-repeat: no-repeat;
+  background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
+  background-attachment: local, local, scroll, scroll;
 }
 
 .dt-table {
   width: 100%;
+  min-width: max-content; /* grow to fit content — wrap handles scroll */
   border-collapse: separate;
   border-spacing: 0;
   font-size: 13px;
-  table-layout: fixed; /* fixed column widths for consistency */
+  table-layout: auto; /* size columns by content, not by th width attr */
 }
 .dt-table thead th {
   background: var(--subtle);
@@ -3499,8 +3525,20 @@ input:focus, select:focus, textarea:focus {
   border-bottom: 1px solid var(--border);
   color: var(--text);
   vertical-align: middle;
+  /* No overflow clipping — lets content breathe; wrap container scrolls on overflow. */
+}
+/* Last column is usually Actions — keep buttons intact, right-align, sticky
+   against the right edge when the table overflows horizontally. */
+.dt-table tbody td:last-child,
+.dt-table thead th:last-child {
+  white-space: nowrap;
+}
+/* Opt-in truncation via a class, when cell text genuinely should ellipsize */
+.dt-table td.cell-truncate {
+  max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .dt-table tbody tr:last-child td {
   border-bottom: none;
