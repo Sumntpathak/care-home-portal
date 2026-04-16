@@ -22,6 +22,33 @@ import {
 } from "./PrintBlocks";
 
 /* ── helpers ── */
+/** Render any value safely as React text.
+ *  Strings/numbers pass through; arrays of primitives join with ", ";
+ *  arrays of schedule-entry-like objects render a compact human-readable
+ *  summary; other objects JSON.stringify as last resort. Prevents
+ *  "Objects are not valid as a React child" crashes when a backend field
+ *  that was expected to be a string turns out to be structured. */
+function toText(v) {
+  if (v === null || v === undefined) return "";
+  if (typeof v === "string" || typeof v === "number") return String(v);
+  if (Array.isArray(v)) {
+    return v.map(item => {
+      if (item === null || item === undefined) return "";
+      if (typeof item === "string" || typeof item === "number") return String(item);
+      // medSchedule entry: { time, medication, dose, timing, given, givenBy, givenAt }
+      const name = item.medication || item.name || item.medicine || "";
+      const dose = item.dose ? ` (${item.dose})` : "";
+      const timing = item.timing || item.time || "";
+      const parts = [name + dose, timing].filter(Boolean).join(" — ");
+      return parts || JSON.stringify(item);
+    }).filter(Boolean).join(", ");
+  }
+  if (typeof v === "object") {
+    try { return JSON.stringify(v); } catch { return ""; }
+  }
+  return String(v);
+}
+
 const fmt = (d) => {
   if (!d) return "—";
   try {
@@ -1110,7 +1137,7 @@ export function DailyCareReport({ data: { patient, notes = [] } }) {
                   .map(([l, v]) => (
                     <tr key={l}>
                       <td style={{ ...S.label, width: 110 }}>{l}</td>
-                      <td style={S.cell}>{v}</td>
+                      <td style={S.cell}>{toText(v)}</td>
                     </tr>
                   ))}
               </tbody>
@@ -1144,7 +1171,7 @@ export function DischargeFile({
 
   const allMeds = notes
     .filter((n) => n.medications)
-    .map((n) => ({ date: n.date, shift: n.shift, meds: n.medications }));
+    .map((n) => ({ date: n.date, shift: n.shift, meds: toText(n.medications) }));
 
   return (
     <PrintPage id="print-discharge">

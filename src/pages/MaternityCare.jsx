@@ -108,7 +108,7 @@ export default function MaternityCare() {
     setLoading(true);
     try {
       const [mf, pt] = await Promise.all([getMaternityFiles(), getPatients()]);
-      setFiles(mf?.data || []);
+      setFiles(Array.isArray(mf) ? mf : (mf?.data || []));
       setPatients(Array.isArray(pt) ? pt : pt?.data || []);
     } catch {} finally { setLoading(false); }
   };
@@ -173,8 +173,8 @@ export default function MaternityCare() {
     <div className="fade-in">
       {/* Print modal */}
       {showPrint != null && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.55)", backdropFilter: "blur(2px)", zIndex: 1000, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "clamp(16px, 4vw, 40px)", paddingTop: "clamp(24px, 5vh, 60px)", overflowY: "auto" }}>
-          <div style={{ background: "#fff", borderRadius: 10, padding: 20, maxWidth: "min(95vw, 780px)", width: "100%", boxShadow: "0 6px 30px rgba(0,0,0,.2)", maxHeight: "calc(100vh - 80px)", overflowY: "auto", animation: "modalIn .2s ease-out" }}>
+        <div className="modal-backdrop">
+          <div className="modal-sheet print-receipt" style={{ maxWidth: "780px" }}>
             <MaternityReport file={files.find(f => f.id === showPrint)} />
             <div className="no-print" style={{ display: "flex", gap: 8, marginTop: 14 }}>
               <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => printElement("print-maternity-report", { pageSize: "A4" })}><FileText size={14} /> Print</button>
@@ -441,8 +441,8 @@ export default function MaternityCare() {
                                 </div>
                               ))}
                             </div>
-                            {n.observations && <div style={{ fontSize: 11, color: "var(--text-secondary)" }}><strong>Obs:</strong> {n.observations}</div>}
-                            {n.medications && <div style={{ fontSize: 11, color: "var(--text-secondary)" }}><strong>Meds:</strong> {n.medications}</div>}
+                            {n.observations && <div style={{ fontSize: 11, color: "var(--text-secondary)" }}><strong>Obs:</strong> {typeof n.observations === "string" ? n.observations : JSON.stringify(n.observations)}</div>}
+                            {n.medications && <div style={{ fontSize: 11, color: "var(--text-secondary)" }}><strong>Meds:</strong> {typeof n.medications === "string" ? n.medications : Array.isArray(n.medications) ? n.medications.map(m => typeof m === "string" ? m : `${m.medication || m.name || ""}${m.dose ? ` (${m.dose})` : ""}`).filter(Boolean).join(", ") : JSON.stringify(n.medications)}</div>}
                           </div>
                         ))}
                         {f.careNotes.length > 5 && <div style={{ fontSize: 11, color: "var(--text-muted)", textAlign: "center" }}>+{f.careNotes.length - 5} more notes (visible in print report)</div>}

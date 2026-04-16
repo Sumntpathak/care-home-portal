@@ -143,7 +143,7 @@ export default function PatientPortal() {
                     ))}
                   </div>
                 ) : (
-                  <div style={{fontSize:"12px",color:"var(--text-muted)"}}>{r.medications}</div>
+                  <div style={{fontSize:"12px",color:"var(--text-muted)"}}>{typeof r.medications === "string" ? r.medications : Array.isArray(r.medications) ? r.medications.map(m => typeof m === "string" ? m : `${m.medication || m.name || ""}${m.dose ? ` (${m.dose})` : ""}`).filter(Boolean).join(", ") : JSON.stringify(r.medications || "")}</div>
                 )}
                 {r.notes && <div style={{fontSize:"12px",color:"var(--text-muted)",marginTop:"6px",fontStyle:"italic"}}>{r.notes}</div>}
               </div>

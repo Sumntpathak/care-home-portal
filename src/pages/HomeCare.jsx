@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
-import { getHomeCarePatients, addHomeCarePatient, getHomeCareNotes, addHomeCareNote, updateHomeCarePatient, getMedSchedule } from "../api/sheets";
-import { Plus, X, BedDouble, Printer, ChevronDown, ChevronUp, LogOut, FileText, Filter, Leaf, Activity, TrendingUp } from "lucide-react";
+import { getHomeCarePatients, addHomeCarePatient, getHomeCareNotes, addHomeCareNote, updateHomeCarePatient, getMedSchedule, getAvailableBeds, assignBed, freeBedByPatient } from "../api/sheets";
+import { Plus, X, BedDouble, Printer, ChevronDown, ChevronUp, LogOut, FileText, Filter, Leaf, Activity, TrendingUp, Users } from "lucide-react";
+import KPICard from "../components/ui/KPICard";
 import { generateDietPlan } from "../utils/healthAdvisor";
 import { generateVitalsReport, getChartConfig } from "../utils/vitalsEngine";
+import VitalsAlertBanner from "../components/VitalsAlertBanner";
 import { validateDischargeSummary, checkDischargeReadiness } from "../utils/nabhTemplates";
 import { printElement, DailyCareReport, DischargeFile } from "../print";
 import { usePagination } from "../components/Pagination";
@@ -11,11 +13,35 @@ import { useAuth } from "../context/AuthContext";
 
 const VITALS_TEMPLATE = { temp:"", bp:"", pulse:"", spo2:"", glucose:"", weight:"" };
 
+/** Safely render any value that might be string/number/array/object as text.
+ *  Guards against "Objects are not valid as a React child" when a backend
+ *  field is structured (e.g. medications returned as an array of schedule
+ *  entries rather than a free-form string). */
+function safeText(v) {
+  if (v === null || v === undefined) return "";
+  if (typeof v === "string" || typeof v === "number") return String(v);
+  if (Array.isArray(v)) {
+    return v.map(item => {
+      if (item == null) return "";
+      if (typeof item === "string" || typeof item === "number") return String(item);
+      const name = item.medication || item.name || item.medicine || "";
+      const dose = item.dose ? ` (${item.dose})` : "";
+      const timing = item.timing || item.time || "";
+      const parts = [name + dose, timing].filter(Boolean).join(" — ");
+      return parts || JSON.stringify(item);
+    }).filter(Boolean).join(", ");
+  }
+  if (typeof v === "object") {
+    try { return JSON.stringify(v); } catch { return ""; }
+  }
+  return String(v);
+}
+
 /* ───────────────────── Complete Patient File (uses centralized template) ───────────────────── */
 function DischargeFileView({ patient, notes, medications, dischargeInfo, onClose }) {
   return (
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.55)",backdropFilter:"blur(2px)",zIndex:2000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"clamp(16px, 4vw, 40px)",paddingTop:"clamp(24px, 5vh, 60px)",overflowY:"auto"}}>
-      <div style={{background:"#fff",borderRadius:"10px",padding:"24px",maxWidth:"min(95vw, 800px)",width:"100%",boxShadow:"0 4px 24px rgba(0,0,0,.2)",maxHeight:"calc(100vh - 80px)",overflowY:"auto",animation:"modalIn .2s ease-out"}}>
+    <div className="modal-backdrop">
+      <div className="modal-sheet print-receipt" style={{maxWidth:"800px"}}>
         <div className="no-print" style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"16px"}}>
           <h3 style={{fontSize:"16px",fontWeight:"700",color:"var(--text)"}}>Complete Patient File — {patient.name}</h3>
           <div style={{display:"flex",gap:"6px"}}>
@@ -73,6 +99,8 @@ function DischargeModal({ patient, onClose, onDischarged }) {
         status: "Discharged",
         notes: `Discharged on ${dischargeInfo.dischargeDate}. Reason: ${dischargeInfo.dischargeReason}. Summary: ${dischargeInfo.dischargeSummary}`,
       });
+      // Auto-free the assigned bed on discharge
+      try { await freeBedByPatient(patient.id); } catch { /* non-critical */ }
       onDischarged();
     } catch {
       addToast("Failed to discharge patient.", "error");
@@ -133,8 +161,8 @@ function DischargeModal({ patient, onClose, onDischarged }) {
   }
 
   return (
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.55)",backdropFilter:"blur(2px)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"clamp(16px, 4vw, 40px)",paddingTop:"clamp(24px, 5vh, 60px)",overflowY:"auto"}}>
-      <div style={{background:"#fff",borderRadius:"10px",padding:"24px",maxWidth:"min(95vw, 520px)",width:"100%",boxShadow:"0 4px 24px rgba(0,0,0,.15)",maxHeight:"calc(100vh - 80px)",overflowY:"auto",animation:"modalIn .2s ease-out"}}>
+    <div className="modal-backdrop">
+      <div className="modal-sheet print-receipt" style={{maxWidth:"520px"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"16px"}}>
           <div>
             <h3 style={{fontSize:"16px",fontWeight:"700",color:"var(--text)"}}>Discharge Patient</h3>
@@ -196,10 +224,9 @@ function DischargeModal({ patient, onClose, onDischarged }) {
 
         <div style={{display:"flex",gap:"8px",marginTop:"16px",flexWrap:"wrap"}}>
           <button
-            className="btn btn-primary"
+            className="btn btn-danger"
             onClick={async () => { await handleDischarge(); await handleGenerateFile(); }}
             disabled={saving || loadingFile}
-            style={{background:"#dc2626",borderColor:"#dc2626"}}
           >
             {saving ? "Discharging..." : loadingFile ? "Generating File..." : "Discharge & Generate File"}
           </button>
@@ -207,7 +234,6 @@ function DischargeModal({ patient, onClose, onDischarged }) {
             className="btn btn-outline"
             onClick={handleGenerateFile}
             disabled={loadingFile}
-            style={{borderColor:"#1a3558",color:"#1a3558"}}
           >
             <FileText size={13}/> {loadingFile ? "Loading..." : "Generate File Only (Preview)"}
           </button>
@@ -343,9 +369,33 @@ function NoteModal({ patient, onClose }) {
 
   const save = async (e) => {
     e.preventDefault();
+
+    // Validate vitals ranges before submitting
+    const vitals = [
+      { name: "Temperature", value: parseFloat(form.temp), min: 95, max: 107, unit: "°F" },
+      { name: "Pulse", value: parseFloat(form.pulse), min: 20, max: 200, unit: "bpm" },
+      { name: "SpO₂", value: parseFloat(form.spo2), min: 70, max: 100, unit: "%" },
+      { name: "Glucose", value: parseFloat(form.glucose), min: 40, max: 500, unit: "mg/dL" },
+    ];
+
+    const invalidVitals = vitals.filter(v => !isNaN(v.value) && (v.value < v.min || v.value > v.max));
+    if (invalidVitals.length > 0) {
+      const msg = invalidVitals.map(v => `${v.name}: ${v.value} ${v.unit} (valid: ${v.min}-${v.max})`).join(", ");
+      addToast(`Out of range vitals: ${msg}`, "error");
+      return;
+    }
+
     setSaving(true);
     try {
-      await addHomeCareNote({ ...form, patientId: patient.id, patientName: patient.name, recordedBy: user?.name || "" });
+      const now = new Date();
+      await addHomeCareNote({
+        ...form,
+        patientId: patient.id,
+        patientName: patient.name,
+        recordedBy: user?.name || "",
+        timestamp: now.toISOString(),
+        createdAt: now.toISOString(),
+      });
       setShowForm(false);
       const r = await getHomeCareNotes(patient.id);
       setNotes(Array.isArray(r)?r:r.data||[]);
@@ -357,8 +407,8 @@ function NoteModal({ patient, onClose }) {
   };
 
   return (
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.5)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:"16px",overflowY:"auto"}}>
-      <div style={{background:"var(--surface)",borderRadius:"12px",padding:"24px",maxWidth:"720px",width:"100%",boxShadow:"0 8px 32px rgba(0,0,0,.2)",maxHeight:"90vh",overflowY:"auto",border:"1px solid var(--border)"}}>
+    <div className="modal-backdrop">
+      <div className="modal-sheet print-receipt" style={{maxWidth:"720px"}}>
         <div className="no-print" style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"16px"}}>
           <div>
             <h3 style={{fontSize:"16px",fontWeight:"700",color:"var(--text)"}}>Daily Care Notes — {patient.name}</h3>
@@ -394,11 +444,13 @@ function NoteModal({ patient, onClose }) {
             </div>
 
             <div className="section-title" style={{margin:"4px 0"}}>Vital Signs</div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"10px"}}>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"10px",marginBottom:"10px"}}>
               {[["temp","Temperature (°F)"],["bp","Blood Pressure"],["pulse","Pulse (bpm)"],["spo2","SpO₂ (%)"],["glucose","Glucose (mg/dL)"],["weight","Weight (kg)"]].map(([k,l]) => (
                 <div key={k} className="field"><label>{l}</label><input value={form[k]} onChange={e=>set(k,e.target.value)} placeholder="—" /></div>
               ))}
             </div>
+            {/* AI Vitals Alert — Gap 5: real-time qSOFA + threshold alerts at point of care */}
+            <VitalsAlertBanner vitals={form} />
 
             <div className="field"><label>Medications Given</label><textarea value={form.medications} onChange={e=>set("medications",e.target.value)} rows={2} /></div>
             <div className="field"><label>Clinical Observations</label><textarea value={form.observations} onChange={e=>set("observations",e.target.value)} rows={2} /></div>
@@ -438,11 +490,11 @@ function NoteModal({ patient, onClose }) {
               ))}
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:"4px",fontSize:"12px",color:"var(--text-secondary)"}}>
-              {n.observations && <div><span style={{fontWeight:"600",color:"var(--text)"}}>Observations:</span> {n.observations}</div>}
-              {n.medications  && <div><span style={{fontWeight:"600",color:"var(--text)"}}>Medications:</span> {n.medications}</div>}
-              {n.nursing      && <div><span style={{fontWeight:"600",color:"var(--text)"}}>Nursing:</span> {n.nursing}</div>}
-              {n.diet         && <div><span style={{fontWeight:"600",color:"var(--text)"}}>Diet:</span> {n.diet}</div>}
-              {n.moodBehaviour && <div><span style={{fontWeight:"600",color:"var(--text)"}}>Mood:</span> {n.moodBehaviour}</div>}
+              {n.observations && <div><span style={{fontWeight:"600",color:"var(--text)"}}>Observations:</span> {safeText(n.observations)}</div>}
+              {n.medications  && <div><span style={{fontWeight:"600",color:"var(--text)"}}>Medications:</span> {safeText(n.medications)}</div>}
+              {n.nursing      && <div><span style={{fontWeight:"600",color:"var(--text)"}}>Nursing:</span> {safeText(n.nursing)}</div>}
+              {n.diet         && <div><span style={{fontWeight:"600",color:"var(--text)"}}>Diet:</span> {safeText(n.diet)}</div>}
+              {n.moodBehaviour && <div><span style={{fontWeight:"600",color:"var(--text)"}}>Mood:</span> {safeText(n.moodBehaviour)}</div>}
             </div>
           </div>
         ))}
@@ -561,18 +613,23 @@ export default function HomeCare() {
   const [showDischarged, setShowDischarged] = useState(false);
   const [saving, setSaving]     = useState(false);
   const [err, setErr]           = useState("");
+  const [availableBeds, setAvailableBeds] = useState([]);
   const [form, setForm]         = useState({
     name:"", age:"", gender:"Male", phone:"", room:"", guardian:"",
     admitDate: new Date().toISOString().split("T")[0],
-    condition:"", notes:"",
+    condition:"", notes:"", selectedBedId:"",
   });
   const set = (k,v) => setForm(p=>({...p,[k]:v}));
 
   const load = () => {
     setLoading(true);
-    getHomeCarePatients()
-      .then(r => setPatients(Array.isArray(r)?r:r.data||[]))
-      .catch(() => { setPatients([]); addToast("Failed to load patients.", "error"); })
+    Promise.all([
+      getHomeCarePatients(),
+      getAvailableBeds().catch(() => []),
+    ]).then(([pRes, bedRes]) => {
+      setPatients(Array.isArray(pRes)?pRes:pRes?.data||[]);
+      setAvailableBeds(Array.isArray(bedRes)?bedRes:bedRes?.data||[]);
+    }).catch(() => { setPatients([]); addToast("Failed to load patients.", "error"); })
       .finally(() => setLoading(false));
   };
   useEffect(load, []);
@@ -582,9 +639,21 @@ export default function HomeCare() {
     if (!form.name) { setErr("Name required."); return; }
     setSaving(true); setErr("");
     try {
-      const r = await addHomeCarePatient(form);
-      if (r.success !== false) { setShowForm(false); load(); }
-      else setErr(r.message||"Failed.");
+      const { selectedBedId, ...patientData } = form;
+      const r = await addHomeCarePatient(patientData);
+      if (r.success !== false) {
+        // Assign selected bed if one was chosen
+        if (selectedBedId) {
+          try {
+            await assignBed(selectedBedId, {
+              patientId: r.id || r.patientId || form.name,
+              patientName: form.name,
+              admitDate: form.admitDate,
+            });
+          } catch { /* non-critical, bed assignment failed */ }
+        }
+        setShowForm(false); load();
+      } else setErr(r.message||"Failed.");
     } catch { setErr("Error."); addToast("Failed to add patient.", "error"); }
     finally { setSaving(false); }
   };
@@ -614,33 +683,42 @@ export default function HomeCare() {
       {selected && <NoteModal patient={selected} onClose={() => setSelected(null)} />}
       {dietFor && (() => {
         const diet = generateDietPlan(dietFor);
+        const hasMeals = diet && !diet.error && diet.meals;
         return (
-          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.5)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:"16px",overflowY:"auto"}}>
-            <div style={{background:"var(--surface)",borderRadius:"12px",padding:"24px",maxWidth:"600px",width:"100%",boxShadow:"0 8px 32px rgba(0,0,0,.2)",maxHeight:"90vh",overflowY:"auto",border:"1px solid var(--border)"}}>
+          <div className="modal-backdrop">
+            <div className="modal-sheet print-receipt" style={{maxWidth:"600px"}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"16px"}}>
                 <div>
-                  <h3 style={{fontSize:"16px",fontWeight:"700",color:"var(--text)",display:"flex",alignItems:"center",gap:"6px"}}><Leaf size={16} style={{color:"var(--success)"}}/> Diet Plan — {dietFor.name}</h3>
-                  <p style={{fontSize:"12px",color:"var(--text-muted)"}}>{diet.dietType} · {diet.calories} cal/day · {dietFor.condition}</p>
+                  <h3 style={{fontSize:"16px",fontWeight:"700",color:"#0f172a",display:"flex",alignItems:"center",gap:"6px"}}><Leaf size={16} style={{color:"#059669"}}/> Diet Plan — {dietFor.name}</h3>
+                  <p style={{fontSize:"12px",color:"#64748b",margin:0}}>{hasMeals ? `${diet.dietType} · ${diet.calories} cal/day` : "Condition-based plan"} · {dietFor.condition}</p>
                 </div>
                 <button className="btn-icon" onClick={() => setDietFor(null)}><X size={15}/></button>
               </div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:"8px",marginBottom:"14px"}}>
-                {[["Breakfast",diet.meals.breakfast],["Mid-Morning",diet.meals.midMorning],["Lunch",diet.meals.lunch],["Evening",diet.meals.evening],["Dinner",diet.meals.dinner],["Bedtime",diet.meals.bedtime]].map(([slot,meal]) => (
-                  <div key={slot} style={{background:"var(--subtle)",borderRadius:"8px",padding:"10px 12px",border:"1px solid var(--border)"}}>
-                    <div style={{fontSize:"9px",fontWeight:"700",textTransform:"uppercase",letterSpacing:".06em",color:"var(--success)",marginBottom:"4px"}}>{slot}</div>
-                    <div style={{fontSize:"12px",color:"var(--text)",lineHeight:"1.5"}}>{meal}</div>
+              {!hasMeals ? (
+                <div style={{background:"#fef3c7",border:"1px solid #fcd34d",borderRadius:"8px",padding:"12px 16px",color:"#92400e",fontSize:"13px",marginBottom:"12px"}}>
+                  Diet plan could not be generated. Please check patient condition details.
+                </div>
+              ) : (
+                <>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:"8px",marginBottom:"14px"}}>
+                    {[["Breakfast",diet.meals.breakfast],["Mid-Morning",diet.meals.midMorning],["Lunch",diet.meals.lunch],["Evening",diet.meals.evening],["Dinner",diet.meals.dinner],["Bedtime",diet.meals.bedtime]].map(([slot,meal]) => (
+                      <div key={slot} style={{background:"#f0fdf4",borderRadius:"8px",padding:"10px 12px",border:"1px solid #bbf7d0"}}>
+                        <div style={{fontSize:"9px",fontWeight:"700",textTransform:"uppercase",letterSpacing:".06em",color:"#059669",marginBottom:"4px"}}>{slot}</div>
+                        <div style={{fontSize:"12px",color:"#1e293b",lineHeight:"1.5"}}>{meal || "—"}</div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-              {diet.restrictions?.length > 0 && (
-                <div style={{background:"var(--danger-light)",borderRadius:"6px",padding:"10px 12px",marginBottom:"8px",fontSize:"12px",color:"var(--danger)"}}>
-                  <strong>Avoid:</strong> {diet.restrictions.join(", ")}
-                </div>
-              )}
-              {diet.tips?.length > 0 && (
-                <div style={{fontSize:"12px",color:"var(--text-secondary)",marginBottom:"12px"}}>
-                  <strong>Tips:</strong> {diet.tips.join(" · ")}
-                </div>
+                  {diet.restrictions?.length > 0 && (
+                    <div style={{background:"#fef2f2",borderRadius:"6px",padding:"10px 12px",marginBottom:"8px",fontSize:"12px",color:"#dc2626",border:"1px solid #fecaca"}}>
+                      <strong>Avoid:</strong> {diet.restrictions.join(", ")}
+                    </div>
+                  )}
+                  {diet.tips?.length > 0 && (
+                    <div style={{fontSize:"12px",color:"#475569",marginBottom:"12px"}}>
+                      <strong>Tips:</strong> {diet.tips.join(" · ")}
+                    </div>
+                  )}
+                </>
               )}
               <button className="btn btn-outline" style={{width:"100%",justifyContent:"center"}} onClick={() => setDietFor(null)}>Close</button>
             </div>
@@ -671,10 +749,10 @@ export default function HomeCare() {
       </div>
 
       {/* Stats */}
-      <div className="stat-grid" style={{marginBottom:"16px"}}>
-        <div className="stat-card" style={{"--accent-color":"var(--primary)"}}><div className="val">{activeCount}</div><div className="label">Active Patients</div></div>
-        <div className="stat-card" style={{"--accent-color":"var(--danger)"}}><div className="val">{dischargedCount}</div><div className="label">Discharged</div></div>
-        <div className="stat-card" style={{"--accent-color":"var(--success)"}}><div className="val">{patients.length}</div><div className="label">Total Admitted</div></div>
+      <div className="kpi-strip" style={{marginBottom:"16px"}}>
+        <KPICard title="Active Patients" value={activeCount} icon={Users} color="teal" />
+        <KPICard title="Discharged" value={dischargedCount} icon={LogOut} color="red" />
+        <KPICard title="Total Admitted" value={patients.length} icon={Activity} color="green" />
       </div>
 
       {showForm && (
@@ -692,7 +770,19 @@ export default function HomeCare() {
             <div className="form-row3">
               <div className="field"><label>Age</label><input type="number" value={form.age} onChange={e=>set("age",e.target.value)} /></div>
               <div className="field"><label>Gender</label><select value={form.gender} onChange={e=>set("gender",e.target.value)}><option>Male</option><option>Female</option><option>Other</option></select></div>
-              <div className="field"><label>Room / Bed</label><input value={form.room} onChange={e=>set("room",e.target.value)} placeholder="101-A" /></div>
+              <div className="field">
+                <label>Room / Bed</label>
+                <select value={form.selectedBedId} onChange={e => {
+                  const bed = availableBeds.find(b => b.id === e.target.value);
+                  set("selectedBedId", e.target.value);
+                  set("room", bed ? `${bed.roomName || bed.room_name || ""}-${bed.id}` : e.target.value);
+                }}>
+                  <option value="">— Select Available Bed —</option>
+                  {availableBeds.map(b => (
+                    <option key={b.id} value={b.id}>{b.roomName || b.room_name} · {b.id} {b.floor ? `(Floor ${b.floor})` : ""}</option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className="form-row">
               <div className="field"><label>Admit Date</label><input type="date" value={form.admitDate} onChange={e=>set("admitDate",e.target.value)} /></div>
@@ -753,16 +843,14 @@ export default function HomeCare() {
                               Notes
                             </button>
                             {!discharged && (
-                              <button className="btn btn-sm btn-outline" onClick={() => setDietFor(p)}
-                                style={{borderColor:"var(--success)",color:"var(--success)"}}>
+                              <button className="btn btn-sm btn-success-outline" onClick={() => setDietFor(p)}>
                                 <Leaf size={11}/> Diet
                               </button>
                             )}
                             {!discharged ? (
                               <button
-                                className="btn btn-sm btn-outline"
+                                className="btn btn-sm btn-danger-outline"
                                 onClick={() => setDischargePatient(p)}
-                                style={{borderColor:"var(--danger)",color:"var(--danger)"}}
                               >
                                 <LogOut size={11}/> Discharge
                               </button>
