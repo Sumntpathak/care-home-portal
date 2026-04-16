@@ -2602,10 +2602,34 @@ body:has(.sc-modal) { overflow: hidden !important; }
   .sc-modal__body { padding: 0 !important; overflow: visible !important; }
 }
 
-/* Print receipt variant — the outer sheet stays on theme surface so the
-   dialog chrome (title bar, buttons) reads correctly in dark mode.
-   Only the inner print content (PrintPage: <div id="print-*"> ...</div>)
-   is forced to ink-on-paper colors. */
+/* Print receipt variant — document mode.
+   The outer sheet grows with content; the BACKDROP scrolls the whole
+   document, not the sheet. This gives the feel of scrolling a page
+   (what you'd want for a multi-page discharge file) instead of trapping
+   scroll inside a tiny dialog-within-a-dialog. */
+.modal-backdrop:has(> .modal-sheet.print-receipt),
+.modal-backdrop:has(> .modal-sheet-print) {
+  align-items: flex-start;
+  padding: 20px clamp(12px, 3vw, 40px) 40px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+@media (max-width: 640px) {
+  .modal-backdrop:has(> .modal-sheet.print-receipt),
+  .modal-backdrop:has(> .modal-sheet-print) {
+    padding: 12px 8px 24px;
+  }
+  .modal-backdrop > .modal-sheet.print-receipt,
+  .modal-backdrop > .modal-sheet-print {
+    padding: 16px;
+    border-radius: 10px;
+  }
+  /* Print content shrinks to fit viewport width on phones */
+  [id^="print-"] table { font-size: 10px; }
+  [id^="print-"] td, [id^="print-"] th { padding: 4px 6px !important; }
+}
 .modal-backdrop > .modal-sheet-print,
 .modal-backdrop > .modal-sheet.print-receipt {
   background: var(--surface);
@@ -2614,13 +2638,11 @@ body:has(.sc-modal) { overflow: hidden !important; }
   border-radius: 14px;
   padding: 24px;
   width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
+  max-height: none;      /* document mode — no cap */
+  overflow: visible;     /* let parent backdrop handle scroll */
   box-shadow: 0 8px 32px rgba(0,0,0,.2);
   animation: modalIn .2s cubic-bezier(.22,1,.36,1);
-  margin: auto;
+  margin: 0 auto;
 }
 
 /* Scope-reset: the print content wrapper forces paper colors on its
