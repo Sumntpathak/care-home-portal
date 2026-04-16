@@ -29,6 +29,34 @@
         }
       })();
     </script>
+    <!-- React + Google Translate safety patch.
+         Google Translate mutates text nodes; when React later tries to
+         removeChild/insertBefore on a node whose parent has changed, the
+         browser throws "Cannot execute 'removeChild' ... not a child of this
+         node". This shim makes those DOM ops idempotent so the app
+         doesn't white-screen on language switch.
+         Credit: facebook/react#11538 community workaround. -->
+    <script>
+      (function(){
+        if (typeof Node !== 'function' || !Node.prototype) return;
+        var origRemove = Node.prototype.removeChild;
+        Node.prototype.removeChild = function(child) {
+          if (child.parentNode !== this) {
+            if (console && console.warn) console.warn('[i18n-safe] skipped removeChild: not a child');
+            return child;
+          }
+          return origRemove.apply(this, arguments);
+        };
+        var origInsert = Node.prototype.insertBefore;
+        Node.prototype.insertBefore = function(newNode, refNode) {
+          if (refNode && refNode.parentNode !== this) {
+            if (console && console.warn) console.warn('[i18n-safe] skipped insertBefore: ref not a child');
+            return newNode;
+          }
+          return origInsert.apply(this, arguments);
+        };
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
