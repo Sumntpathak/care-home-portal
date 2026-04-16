@@ -2602,7 +2602,10 @@ body:has(.sc-modal) { overflow: hidden !important; }
   .sc-modal__body { padding: 0 !important; overflow: visible !important; }
 }
 
-/* Print receipt variant — dark-mode friendly, prints white */
+/* Print receipt variant — the outer sheet stays on theme surface so the
+   dialog chrome (title bar, buttons) reads correctly in dark mode.
+   Only the inner print content (PrintPage: <div id="print-*"> ...</div>)
+   is forced to ink-on-paper colors. */
 .modal-backdrop > .modal-sheet-print,
 .modal-backdrop > .modal-sheet.print-receipt {
   background: var(--surface);
@@ -2613,17 +2616,48 @@ body:has(.sc-modal) { overflow: hidden !important; }
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   box-shadow: 0 8px 32px rgba(0,0,0,.2);
   animation: modalIn .2s cubic-bezier(.22,1,.36,1);
   margin: auto;
 }
-/* Print receipt inner content — uses card surface, not forced white */
+
+/* Scope-reset: the print content wrapper forces paper colors on its
+   descendants — beats global rules like `tbody td { color: var(--text); }`
+   via higher specificity, but WITHOUT !important so that inline
+   style={{ color: ... }} set in PrintBlocks.jsx (navy headers, status
+   badges) still wins. Every print template wraps content in
+   <div id="print-<slug>"> with its own background: P.white. */
+[id^="print-"] {
+  color-scheme: light;
+  color: #1e293b;
+  background: #ffffff;
+}
+[id^="print-"] table,
+[id^="print-"] tbody,
+[id^="print-"] thead,
+[id^="print-"] tr {
+  color: #1e293b;
+}
+[id^="print-"] tbody td,
+[id^="print-"] tbody th,
+[id^="print-"] thead td,
+[id^="print-"] thead th {
+  color: #1e293b;
+  background-color: transparent;
+}
+[id^="print-"] tbody tr:hover {
+  background: #f8fafc;
+}
+
+/* Print receipt inner content — forced white paper */
 .print-receipt-content {
-  background: var(--card);
+  background: #ffffff;
   border-radius: var(--radius-md);
   padding: 24px;
-  color: var(--text);
-  border: 1px solid var(--border);
+  color: #1e293b;
+  border: 1px solid #e2e8f0;
 }
 
 /* Print: backdrop hides, only modal content prints */
