@@ -19,7 +19,7 @@ import {
   BarChart3, FileText, HeartPulse, Search, Bell, Sun, Moon,
   Menu, X, Shield, Activity, Siren, ChevronRight, FolderOpen,
   ChevronDown, Settings, HelpCircle, PanelLeftClose, PanelLeft,
-  Sparkles, CircleDot, Baby, RefreshCw, FlaskConical, Image
+  Sparkles, CircleDot, Baby, RefreshCw, FlaskConical, Image, Zap
 } from "lucide-react";
 
 const I = 18;
@@ -52,6 +52,7 @@ const NAV_SECTIONS = {
       { to: "/radiology", icon: <Image size={I}/>, labelKey: "nav.radiology" },
     ]},
     { section: "nav.opd", id: "opd", items: [
+      { to: "/quick-opd", icon: <Zap size={I}/>, labelKey: "nav.quickOpd" },
       { to: "/appointments", icon: <CalendarDays size={I}/>, labelKey: "nav.appointments" },
       { to: "/prescriptions", icon: <FileText size={I}/>, labelKey: "nav.prescriptions" },
       { to: "/dispensary", icon: <Pill size={I}/>, labelKey: "nav.dispensary" },
@@ -91,6 +92,7 @@ const NAV_SECTIONS = {
   ],
   "Staff:Appointment Desk": [
     { section: "nav.opd", id: "fd", items: [
+      { to: "/quick-opd", icon: <Zap size={I}/>, labelKey: "nav.quickOpd" },
       { to: "/", icon: <LayoutDashboard size={I}/>, labelKey: "nav.dashboard" },
       { to: "/appointments", icon: <CalendarDays size={I}/>, labelKey: "nav.appointments" },
       { to: "/patients", icon: <UserCircle size={I}/>, labelKey: "nav.patients" },
@@ -174,7 +176,8 @@ export default function Layout() {
   const location = useLocation();
   const [theme, setTheme] = useState(() => localStorage.getItem("ch_theme") || "light");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(() => localStorage.getItem("ch_sidebar_collapsed") === "true");
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem("ch_sidebar_collapsed") !== "false");
+  const [hovered, setHovered] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedSections, setExpandedSections] = useState({});
@@ -226,17 +229,9 @@ export default function Layout() {
   }, []);
 
   const toggleSection = useCallback((id) => {
-    if (collapsed && !sidebarOpen) return;
+    if (collapsed && !sidebarOpen && !hovered) return;
     setExpandedSections(prev => ({ ...prev, [id]: !prev[id] }));
-  }, [collapsed, sidebarOpen]);
-
-  const toggleCollapse = useCallback(() => {
-    setCollapsed(prev => {
-      const next = !prev;
-      localStorage.setItem("ch_sidebar_collapsed", String(next));
-      return next;
-    });
-  }, []);
+  }, [collapsed, sidebarOpen, hovered]);
 
   // Check if a section contains the active route
   const activeSection = useMemo(() => {
@@ -259,16 +254,20 @@ export default function Layout() {
       {sidebarOpen && <div className="sb-overlay no-print" onClick={() => setSidebarOpen(false)} />}
 
       {/* ── SIDEBAR ── */}
-      <aside className={`sb no-print${sidebarOpen ? " sb-open sb-mobile-full" : ""}${collapsed && !sidebarOpen ? " sb-collapsed" : ""}`}>
+      <aside
+        className={`sb no-print${sidebarOpen ? " sb-open sb-mobile-full" : ""}${(collapsed && !sidebarOpen && !hovered) ? " sb-collapsed" : ""}`}
+        onMouseEnter={() => { if (window.innerWidth >= 768) setHovered(true); }}
+        onMouseLeave={() => { if (window.innerWidth >= 768) setHovered(false); }}
+      >
 
         {/* Brand Header */}
         <div className="sb-header">
           <div className="sb-logo-wrap" onClick={() => navigate("/")}>
             <div className="sb-logo">
-              <HeartPulse size={(collapsed && !sidebarOpen) ? 20 : 22} color="#fff" strokeWidth={2.5} />
+              <HeartPulse size={(collapsed && !sidebarOpen && !hovered) ? 20 : 22} color="#fff" strokeWidth={2.5} />
               <div className="sb-logo-pulse" />
             </div>
-            {(!collapsed || sidebarOpen) && (
+            {(!collapsed || sidebarOpen || hovered) && (
               <div className="sb-brand">
                 <div className="sb-brand-name">shanti<span>care</span></div>
                 <div className="sb-brand-tag">Nursing Home</div>
@@ -283,20 +282,21 @@ export default function Layout() {
               <X size={18} />
             </button>
           )}
-          {(!collapsed || sidebarOpen) && (
-            <button className="sb-collapse-btn" onClick={toggleCollapse} title="Collapse sidebar">
-              <PanelLeftClose size={16} />
-            </button>
-          )}
-          {(collapsed && !sidebarOpen) && (
-            <button className="sb-collapse-btn" onClick={toggleCollapse} title="Expand sidebar" style={{ margin: "4px auto 0" }}>
-              <PanelLeft size={16} />
+          {!sidebarOpen && (
+            <button className="sb-collapse-btn" onClick={() => {
+              setCollapsed(c => {
+                const next = !c;
+                localStorage.setItem("ch_sidebar_collapsed", String(next));
+                return next;
+              });
+            }}>
+              {(collapsed && !hovered) ? <PanelLeft size={16} /> : <PanelLeftClose size={16} />}
             </button>
           )}
         </div>
 
         {/* Quick Stats Banner */}
-        {(!collapsed || sidebarOpen) && (
+        {(!collapsed || sidebarOpen || hovered) && (
           <div className="sb-status-bar">
             <div className="sb-status-item">
               <CircleDot size={8} className="sb-status-dot" />
@@ -318,9 +318,9 @@ export default function Layout() {
                 <button
                   className={`sb-section-header${isExpanded ? " expanded" : ""}`}
                   onClick={() => toggleSection(section.id)}
-                  title={(collapsed && !sidebarOpen) ? t(section.section) : undefined}
+                  title={(collapsed && !sidebarOpen && !hovered) ? t(section.section) : undefined}
                 >
-                  {(collapsed && !sidebarOpen) ? (
+                  {(collapsed && !sidebarOpen && !hovered) ? (
                     <div className="sb-section-dot" style={{ background: hasActive ? "var(--primary)" : "var(--border)" }} />
                   ) : (
                     <>
@@ -341,21 +341,21 @@ export default function Layout() {
                     <NavLink
                       key={to} to={to} end={to === "/"}
                       className={({ isActive }) => `sb-link${isActive ? " active" : ""}`}
-                      title={(collapsed && !sidebarOpen) ? label : undefined}
+                      title={(collapsed && !sidebarOpen && !hovered) ? label : undefined}
                       onClick={() => setSidebarOpen(false)}
-                      onMouseEnter={() => (collapsed && !sidebarOpen) && setHoveredItem(to)}
+                      onMouseEnter={() => (collapsed && !sidebarOpen && !hovered) && setHoveredItem(to)}
                       onMouseLeave={() => setHoveredItem(null)}
                     >
                       <span className="sb-link-indicator" />
                       <span className="sb-link-icon">{icon}</span>
-                      {(!collapsed || sidebarOpen) && <span className="sb-link-label">{label}</span>}
-                      {(!collapsed || sidebarOpen) && badge && <span className="sb-link-badge">{badge}</span>}
+                      {(!collapsed || sidebarOpen || hovered) && <span className="sb-link-label">{label}</span>}
+                      {(!collapsed || sidebarOpen || hovered) && badge && <span className="sb-link-badge">{badge}</span>}
                       {to === '/sync-status' && conflictCount > 0 && (
                         <span style={{ marginLeft: 'auto', background: 'var(--danger)', color: '#fff', borderRadius: '10px', padding: '0 6px', fontSize: '10px', fontWeight: 700, minWidth: '18px', textAlign: 'center' }}>{conflictCount}</span>
                       )}
 
                       {/* Tooltip for collapsed mode */}
-                      {(collapsed && !sidebarOpen) && hoveredItem === to && (
+                      {(collapsed && !sidebarOpen && !hovered) && hoveredItem === to && (
                         <div className="sb-tooltip">{label}</div>
                       )}
                     </NavLink>
@@ -369,19 +369,19 @@ export default function Layout() {
 
         {/* Sidebar Footer */}
         <div className="sb-footer">
-          {(!collapsed || sidebarOpen) && (
+          {(!collapsed || sidebarOpen || hovered) && (
             <button className="sb-footer-btn" onClick={() => setTheme(t => t === "dark" ? "light" : "dark")}>
               {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
               <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
             </button>
           )}
 
-          <div className="sb-user" onClick={() => (collapsed && !sidebarOpen) && toggleCollapse()}>
+          <div className="sb-user">
             <div className="sb-user-avatar" style={{ background: roleBg }}>
               {userInitial}
               <span className="sb-user-status" />
             </div>
-            {(!collapsed || sidebarOpen) && (
+            {(!collapsed || sidebarOpen || hovered) && (
               <div className="sb-user-info">
                 <div className="sb-user-name">{user?.name}{user?.testingMode && (
                   <span style={{ display: "inline-block", padding: "1px 6px", borderRadius: 4, background: "var(--info-light)", color: "var(--info)", fontSize: 9, fontWeight: 700, marginLeft: 4 }}>TESTING</span>
@@ -389,7 +389,7 @@ export default function Layout() {
                 <div className="sb-user-role">{roleLabel}</div>
               </div>
             )}
-            {(!collapsed || sidebarOpen) && (
+            {(!collapsed || sidebarOpen || hovered) && (
               <button className="sb-logout-btn" onClick={(e) => { e.stopPropagation(); logout(); navigate("/login"); }} title="Sign out">
                 <LogOut size={15} />
               </button>
@@ -399,7 +399,7 @@ export default function Layout() {
       </aside>
 
       {/* ── APP BODY ── */}
-      <div className={`app-body${(collapsed && !sidebarOpen) ? " app-body-collapsed" : ""}`}>
+      <div className={`app-body${(collapsed && !sidebarOpen && !hovered) ? " app-body-collapsed" : ""}`}>
         {/* TOPBAR */}
         <div className="topbar no-print">
           <div className="topbar-left">

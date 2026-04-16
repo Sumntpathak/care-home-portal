@@ -16,6 +16,19 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏥</text></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Theme init: runs synchronously before CSS applies, so there is no
+         flash of the wrong theme. Defaults to LIGHT; dark only when the user
+         has explicitly toggled it. -->
+    <script>
+      (function(){
+        try {
+          var t = localStorage.getItem('ch_theme') || 'light';
+          document.documentElement.setAttribute('data-theme', t);
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

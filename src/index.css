@@ -4563,4 +4563,12 @@ tbody td, .table td {
   }
 }
 
+/* Landing — Engine Review grid collapses on narrow viewports */
+@media (max-width: 720px) {
+  .ld-engine-grid {
+    grid-template-columns: 1fr !important;
+    gap: 18px !important;
+  }
+}
+
 

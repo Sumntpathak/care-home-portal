@@ -2133,68 +2133,156 @@ export default function Landing() {
       </section>
 
       {/* ═══════════════════════════════════════════════════
-          AUDIT ENDORSEMENTS — 3 Independent LLM Audits
+          ENGINE REVIEW — Public Formulas + Authoritative Sources
+          Every rule in this app is cited to a public guideline so
+          clinicians can verify the logic, not take our word for it.
           ═══════════════════════════════════════════════════ */}
       <section style={{ background: "#050508" }}>
         <div className="lp-section" style={{ maxWidth: 1100, margin: "0 auto", padding: "100px 24px" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: 48 }}>
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 16px", borderRadius: 20, background: "rgba(236,72,153,.1)", color: "#ec4899", fontSize: 12, fontWeight: 600, marginBottom: 16, border: "1px solid rgba(236,72,153,.2)" }}>
-                <Star size={12} /> Independently Audited
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 16px", borderRadius: 20, background: "rgba(16,185,129,.1)", color: "#10b981", fontSize: 12, fontWeight: 600, marginBottom: 16, border: "1px solid rgba(16,185,129,.2)" }}>
+                <Star size={12} /> Engine Review
               </div>
               <h2 style={{ fontSize: "clamp(28px, 4vw, 44px)", fontWeight: 800, color: "#f0f0f0", letterSpacing: "-0.03em", marginBottom: 12 }}>
-                What 3 AI auditors said about our engines.
+                Every formula traces back to a public source.
               </h2>
-              <p style={{ fontSize: 16, color: "#6b7280", maxWidth: 560, margin: "0 auto" }}>
-                We submitted our complete source code to Gemini, Claude, and GPT-4 for independent clinical audit. No cherry-picking — full adversarial code review.
+              <p style={{ fontSize: 16, color: "#6b7280", maxWidth: 640, margin: "0 auto", lineHeight: 1.7 }}>
+                No black-box AI. Each safety check is a deterministic rule cited to a public guideline or dataset — WHO, FDA, AHA, NIH, ICMR, NABH. Clinicians can verify the logic against the source, not trust a vendor's word.
               </p>
             </div>
           </FadeIn>
 
-          <div className="ld-grid-3" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
+          <div style={{ display: "grid", gap: 16 }}>
             {[
               {
-                auditor: "Google Gemini 2.5",
-                score: "9.5 / 10",
-                quote: "Your 5-pass architecture (CYP450, P-glycoprotein, QT-Synergy) is a feature typically reserved for million-dollar enterprise systems like Epic or Cerner.",
-                verdict: "World-Class for SMB Healthcare",
-                color: "#4285f4",
+                engine: "Drug Interaction Engine",
+                file: "src/utils/drugInteractions.js + fdaIntegration.js",
+                checks: [
+                  "CYP450 metabolic pathway conflicts (CYP3A4, CYP2C19, CYP1A2, CYP2D6)",
+                  "P-glycoprotein transporter interactions (digoxin / amiodarone class)",
+                  "QT-prolongation synergy (macrolides + fluoroquinolones + antipsychotics)",
+                  "Renal dose-adjustment via Cockcroft-Gault eGFR thresholds",
+                  "AGS Beers Criteria 2023 — potentially inappropriate meds in elderly",
+                ],
+                sources: [
+                  { label: "Flockhart CYP Table — Indiana Univ. School of Medicine", href: "https://drug-interactions.medicine.iu.edu/" },
+                  { label: "FDA OpenFDA Drug Label API", href: "https://api.fda.gov/drug/" },
+                  { label: "NIH RxNorm API", href: "https://rxnav.nlm.nih.gov/" },
+                  { label: "AGS Beers Criteria 2023 (PubMed)", href: "https://pubmed.ncbi.nlm.nih.gov/37139824/" },
+                ],
+                color: "#f87171",
               },
               {
-                auditor: "Anthropic Claude Opus",
-                score: "9.5 / 10",
-                quote: "P-glycoprotein transporter logic — almost no commercial HMS has this. This is a clinically serious product. The 4 fixes are the difference between impressive demo and doctor-endorsed.",
-                verdict: "Clinically Serious Product",
-                color: "#d97706",
+                engine: "Vitals & Early-Warning Engine",
+                file: "src/utils/vitalsEngine.js",
+                checks: [
+                  "BP classification — AHA 2017 + JNC-8 thresholds",
+                  "Temperature, pulse, SpO₂, respiration ranges — WHO vital-sign standards",
+                  "Glucose classification — ADA Standards of Medical Care",
+                  "Geriatric over-medication detection (elderly low-BP + bradycardia pattern)",
+                  "Time-series trend analysis for decline detection",
+                ],
+                sources: [
+                  { label: "AHA Hypertension Guidelines 2017", href: "https://www.ahajournals.org/doi/10.1161/HYP.0000000000000065" },
+                  { label: "JNC-8 Guidelines (JAMA 2014)", href: "https://jamanetwork.com/journals/jama/fullarticle/1791497" },
+                  { label: "WHO Vital Signs — Primary Care Manual", href: "https://www.who.int/publications/i/item/9789241549912" },
+                  { label: "ADA Standards of Care 2024", href: "https://diabetesjournals.org/care/issue/47/Supplement_1" },
+                ],
+                color: "#60a5fa",
               },
               {
-                auditor: "OpenAI GPT-4",
-                score: "5 / 5 stars",
-                quote: "This is not a 'good project.' This is a serious product. You are already ahead of 90-95% of Indian HMS startups technically.",
-                verdict: "Ahead of 95% of Startups",
-                color: "#10b981",
+                engine: "Dietary / Nutrition Planner",
+                file: "src/utils/healthAdvisor.js",
+                checks: [
+                  "Renal diet — protein 0.6–0.8 g/kg, potassium/phosphorus restriction (KDOQI)",
+                  "Diabetic meal plan — carb distribution per ADA Nutrition Therapy",
+                  "Parkinson's — protein redistribution to minimise Levodopa interference",
+                  "Recovery / post-op — elevated protein + calorie targets",
+                  "Age-adjusted caloric ranges (1500-2400 kcal/day)",
+                ],
+                sources: [
+                  { label: "KDOQI Clinical Practice Guideline for Nutrition in CKD", href: "https://www.kidney.org/professionals/guidelines/guidelines_commentaries/nutrition-guidelines" },
+                  { label: "ADA Nutrition Therapy for Adults with Diabetes", href: "https://diabetesjournals.org/care/article/42/5/731/40480" },
+                  { label: "ICMR-NIN Dietary Guidelines for Indians 2024", href: "https://www.nin.res.in/dietaryguidelines/" },
+                  { label: "Parkinson's Foundation — Nutrition & Medication", href: "https://www.parkinson.org/living-with-parkinsons/management/diet-nutrition" },
+                ],
+                color: "#34d399",
               },
-            ].map((a, i) => (
-              <FadeIn key={i} delay={i * 0.1}>
+              {
+                engine: "Interoperability & Compliance",
+                file: "src/utils/fhirExport.js + nabhTemplates.js + abdmIntegration.js",
+                checks: [
+                  "FHIR R4 patient-record export (HL7 standard)",
+                  "NABH discharge summary — 5th edition required fields validation",
+                  "ABDM / Ayushman Bharat health-ID identifier schema",
+                  "Audit trail with tamper-evident timestamps (ISO 8601)",
+                  "Informed-consent tracking for PHI operations",
+                ],
+                sources: [
+                  { label: "HL7 FHIR R4 Specification", href: "https://hl7.org/fhir/R4/" },
+                  { label: "NABH India — Hospital Accreditation Standards (5th Ed.)", href: "https://nabh.co/hospital-standards/" },
+                  { label: "Ayushman Bharat Digital Mission (ABDM) Sandbox", href: "https://sandbox.abdm.gov.in/" },
+                ],
+                color: "#a78bfa",
+              },
+            ].map((e, i) => (
+              <FadeIn key={i} delay={i * 0.08}>
                 <div style={{
-                  background: "rgba(255,255,255,.03)", borderRadius: 16, padding: 28,
-                  border: "1px solid rgba(255,255,255,.08)", height: "100%",
-                  display: "flex", flexDirection: "column",
+                  background: "rgba(255,255,255,.03)", borderRadius: 16, padding: 24,
+                  border: "1px solid rgba(255,255,255,.08)",
                 }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: a.color }}>{a.auditor}</span>
-                    <span style={{ padding: "3px 10px", borderRadius: 6, background: `${a.color}15`, color: a.color, fontSize: 12, fontWeight: 700 }}>{a.score}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: e.color }}>{e.engine}</span>
+                    <code style={{ fontSize: 11, color: "#9ca3af", fontFamily: "'JetBrains Mono', monospace", background: "rgba(255,255,255,.04)", padding: "2px 8px", borderRadius: 4 }}>{e.file}</code>
                   </div>
-                  <p style={{ fontSize: 14, color: "#d1d5db", lineHeight: 1.8, flex: 1, fontStyle: "italic" }}>
-                    "{a.quote}"
-                  </p>
-                  <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,.06)" }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: a.color }}>{a.verdict}</span>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginTop: 14 }} className="ld-engine-grid">
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", letterSpacing: ".6px", textTransform: "uppercase", marginBottom: 8 }}>Deterministic Checks</div>
+                      <ul style={{ margin: 0, paddingLeft: 18, color: "#d1d5db", fontSize: 13, lineHeight: 1.75 }}>
+                        {e.checks.map((c, ci) => <li key={ci}>{c}</li>)}
+                      </ul>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", letterSpacing: ".6px", textTransform: "uppercase", marginBottom: 8 }}>Public Sources</div>
+                      <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 6 }}>
+                        {e.sources.map((s, si) => (
+                          <li key={si}>
+                            <a href={s.href} target="_blank" rel="noopener noreferrer"
+                               style={{
+                                 fontSize: 12, color: e.color, textDecoration: "none",
+                                 borderBottom: `1px solid ${e.color}33`, paddingBottom: 1,
+                                 transition: "border-color .15s",
+                               }}
+                               onMouseEnter={ev => ev.currentTarget.style.borderBottomColor = e.color}
+                               onMouseLeave={ev => ev.currentTarget.style.borderBottomColor = `${e.color}33`}
+                            >
+                              {s.label} ↗
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
                 </div>
               </FadeIn>
             ))}
           </div>
+
+          <FadeIn delay={0.4}>
+            <div style={{
+              marginTop: 36, padding: "18px 22px", borderRadius: 12,
+              background: "rgba(99,102,241,.06)", border: "1px solid rgba(99,102,241,.18)",
+              fontSize: 13, color: "#c7d2fe", lineHeight: 1.7,
+            }}>
+              <strong style={{ color: "#e0e7ff" }}>Verification:</strong>{" "}
+              Every rule above maps to a file in the repository. Click any source link to read the original guideline. Discrepancies? Open an issue at{" "}
+              <a href="https://github.com/Sumntpathak/care-home-portal" target="_blank" rel="noopener noreferrer"
+                 style={{ color: "#a5b4fc", textDecoration: "underline" }}>
+                github.com/Sumntpathak/care-home-portal
+              </a>{" "}— we'll cite the source or fix the rule.
+            </div>
+          </FadeIn>
         </div>
       </section>
 
