@@ -1,7 +1,8 @@
-import { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
-import { logStaffAction, authLogout, authMe } from "../api/sheets";
+import { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { logStaffAction, authLogout, authMe, login as apiLogin } from "../api/sheets";
 import { secureGet, secureSet, secureRemove, initSession } from "../utils/security";
 import { clearKeys } from "../lib/dbCrypto";
+import { initSessionKey, clearSessionKey } from "../utils/sessionKeyManager";
 
 const AuthContext = createContext(null);
 
@@ -21,25 +22,42 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (DEMO_MODE) return;
 
-    authMe()
-      .then((userData) => {
+    (async () => {
+      try {
+        const userData = await authMe();
         if (userData && userData.id) {
+          await initSessionKey();
           setUser(userData);
+          return;
         }
-      })
-      .catch(() => {
-        setUser(null);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+      } catch {}
+
+      // No active session — dev auto-login as admin for instant preview
+      if (import.meta.env.DEV) {
+        try {
+          const result = await apiLogin("pathaksumnt4u@gmail.com", "admin123");
+          if (result?.user) {
+            await initSessionKey();
+            setUser(result.user);
+            return;
+          }
+        } catch {}
+        // API unreachable locally — fall back to mock admin for UI preview
+        await initSessionKey();
+        setUser({ id: "DEV-ADMIN", name: "Sumnt Pathak", role: "Admin", position: "Administrator", facilityId: "FAC-001", email: "pathaksumnt4u@gmail.com" });
+      }
+    })().finally(() => setLoading(false));
   }, []);
 
-  // In demo mode, persist user to localStorage
+  // In demo mode, persist user to localStorage and init session key on mount restore
   useEffect(() => {
     if (!DEMO_MODE) return;
-    if (user) secureSet("ch_user", user);
-    else secureRemove("ch_user");
+    if (user) {
+      secureSet("ch_user", user);
+      initSessionKey().catch(() => {});
+    } else {
+      secureRemove("ch_user");
+    }
   }, [user]);
 
   // Listen for auth:logout events (from API client on 401)
@@ -59,9 +77,32 @@ export function AuthProvider({ children }) {
     return cleanup;
   }, [user]);
 
-  const loginUser = useCallback((u) => {
+  // Clear session key if tab is hidden for >30 minutes
+  const hiddenSince = useRef(null);
+  useEffect(() => {
+    if (!user) return;
+    const BACKGROUND_TIMEOUT = 30 * 60 * 1000;
+    const handler = () => {
+      if (document.hidden) {
+        hiddenSince.current = Date.now();
+      } else {
+        if (hiddenSince.current && Date.now() - hiddenSince.current > BACKGROUND_TIMEOUT) {
+          clearSessionKey();
+          clearKeys();
+          logoutFn();
+        }
+        hiddenSince.current = null;
+      }
+    };
+    document.addEventListener('visibilitychange', handler);
+    return () => document.removeEventListener('visibilitychange', handler);
+  }, [user]);
+
+  const loginUser = useCallback(async (u) => {
     setSessionWarning(0);
     setUser(u);
+    // Initialize non-extractable encryption key in memory
+    await initSessionKey();
     // Pre-cache critical data for offline use
     import("../api/sheets").then(({ precacheAll, getPatients, getMedicines, getMedSchedule, getCarePlans, getAppointments, getIncidents, getRooms, getHomeCarePatients }) => {
       if (!precacheAll) return;
@@ -87,8 +128,23 @@ export function AuthProvider({ children }) {
         if (!DEMO_MODE) authLogout().catch(() => {});
       }
       if (DEMO_MODE) secureRemove("ch_user");
-        clearKeys();
-        import("../lib/liveSync").then(({ disconnect }) => disconnect()).catch(() => {});
+      clearSessionKey();
+      clearKeys();
+      import("../lib/liveSync").then(({ disconnect }) => disconnect()).catch(() => {});
+
+      // Reset language to English so next login starts clean.
+      try {
+        localStorage.removeItem("sc_language");
+        // Clear Google Translate cookies (both path and domain variants)
+        document.cookie = "googtrans=;path=/;expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        document.cookie = "googtrans=;path=/;domain=" + location.hostname + ";expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        // Also clear the parent-domain cookie for Cloudflare Pages preview subdomains
+        var parts = location.hostname.split(".");
+        if (parts.length > 1) {
+          document.cookie = "googtrans=;path=/;domain=." + parts.slice(-2).join(".") + ";expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        }
+      } catch {}
+
       return null;
     });
     setSessionWarning(0);
